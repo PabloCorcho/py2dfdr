@@ -139,3 +139,4 @@ dmypy.json
 reduce_hikids.py
 create_hikids_reduction_data.py
 misc/
+__pycache__/
