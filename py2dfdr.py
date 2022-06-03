@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 26 15:32:42 2022
-
-@author: pablo
-"""
-
 import os
 import subprocess
 import sys
@@ -343,6 +337,7 @@ def aaorun_command(command, file, options=None, output=None,
         cmd_options = ' '.join(extra_options)
 
     aaorun_command = ' '.join([aaorun, command, file, cmd_options, output])
+    # TODO: This should be replaced  by subprocess
     os.system(aaorun_command)
     aaorun_cleanup()
 
