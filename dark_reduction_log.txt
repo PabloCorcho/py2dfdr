@@ -1,0 +1,30 @@
+
+===============================
+AAO Run Process AAO08455:
+=============================== 
+
+ABOUT TO SPAWN
+ABOUT TO CREATE NEW TASK CMD08455 from AAO08455
+OBEY CHANGE_WD TO /home/pablo/hikids/py2dfdr/data/20180310/ccd_1
+ABOUT TO SPAWN -- SUCCESS
+aaorun:Main about to call aaorunCmd:reduce_dark /home/pablo/hikids/py2dfdr/data/20180310/ccd_1/10mar10121.fits -idxfile koala_dark.idx -wdir /home/pablo/hikids/py2dfdr/data/20180310/ccd_1 -taskname CMD08455 -complete {{aaorun:CloseSpawnedTask CMD08455 aaorun:Exit}} -error    {aaorun:mainError CMD08455}
+Executing 2DFdr Command: reduce_dark on file /home/pablo/hikids/py2dfdr/data/20180310/ccd_1/10mar10121.fits
+
+Searching -IDXFILE KOALA_DARK.IDX -WDIR /HOME/PABLO/HIKIDS/PY2DFDR/DATA/20180310/CCD_1 -TASKNAME CMD08455 -COMPLETE {{AAORUN:CLOSESPAWNEDTASK CMD08455 AAORUN:EXIT}} -ERROR {AAORUN:MAINERROR CMD08455}
+Configuring for default koala_dark.idx
+additional_args=-idxfile koala_dark.idx -wdir /home/pablo/hikids/py2dfdr/data/20180310/ccd_1 -taskname CMD08455 -complete {{aaorun:CloseSpawnedTask CMD08455 aaorun:Exit}} -error {aaorun:mainError CMD08455}
+taskname complete idxfile args error wdir
+About to activate new task CMD08455 to perfom REDUCE_DARK
+AAO08455:CMD08455:Not subtracting from bias frame.
+AAO08455:CMD08455:Debiasing from overscan region.
+AAO08455:CMD08455:Data region = (0001:2048,0001:4098)                                                                                                                                                           
+AAO08455:CMD08455:Bias region = (2049:2070,0001:4098)                                                                                                                                                           
+AAO08455:Action "REDUCE_DARK", Task "CMD08455", completed.
+Drama Task CMD08455 Completed
+Calling CMD08455 to exit then calling  aaorun:Exit
+AAO08455:Action "EXIT", Task "CMD08455", completed.
+
+========================================
+Exiting AAO Run Process AAO08455 
+======================================= 
+

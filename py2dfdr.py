@@ -312,7 +312,7 @@ def aaorun_cleanup():
 
 def aaorun_command(command, file, options=None, output=None,
                    idx_file='koala.idx',
-                   aaorun='aaorun', **kwargs):
+                   aaorun='aaorun', wdir=None, **kwargs):
     """Create a tramline file from fibre flat.
 
     params
@@ -322,8 +322,8 @@ def aaorun_command(command, file, options=None, output=None,
     idx_file: (str) path to the idx file used for reducing data. Default is koala.idx
     aaorun: (str) path to the binary executable file
     """
-    wdir = os.path.dirname(file)
-
+    if wdir is None:
+        wdir = os.path.dirname(file)
     if output is None:
         output = ''
     else:
@@ -335,7 +335,6 @@ def aaorun_command(command, file, options=None, output=None,
         extra_options.append('-idxfile %s' % idx_file)
         extra_options.append('-wdir %s' % wdir)
         cmd_options = ' '.join(extra_options)
-
     aaorun_command = ' '.join([aaorun, command, file, cmd_options, output])
     # TODO: This should be replaced  by subprocess
     os.system(aaorun_command)

@@ -631,7 +631,7 @@ if __name__ == '__main__':
     obsrunpath = '/media/pablo/toshiba-pab/reduce_koala_april/obs_run_0'
     redOR = ReduceObsRun(
         obs_run_path=obsrunpath,
-        ccds=['ccd_2'],
+        ccds=['ccd_1', 'ccd_2'],
         dark_idx='koala_dark.idx',
         fibreflat_idx='koala_dark.idx',
         lflat_idx='koala_dark.idx',
@@ -640,16 +640,20 @@ if __name__ == '__main__':
 
     # redOR.reduce_darks()
     # redOR.reduce_lflats()
-    redOR.extract_tramlines()
+    # redOR.extract_tramlines()
     # redOR.reduce_arcs()
-    # redOR.reduce_fflats()
-    # redOR.reduce_object()
+
 
     redOR.get_master_darks()
     redOR.get_master_lflats()
     redOR.get_tlm_maps()
     redOR.get_arcs()
-    redOR.get_fibreflats()
+
+    redOR.reduce_fflats()
+    redOR.reduce_object()
+    
+    
+    # redOR.get_fibreflats()
 
     redOR.log.close()
     tend = time.time()
