@@ -307,12 +307,12 @@ class KOALA_archive(object):
 # =============================================================================
 def aaorun_cleanup():
     """blah..."""
-    os.system('cleanup >/dev/null 2>&1')
+    subprocess.run('clean >/dev/null 2>&1', shell=True, timeout=60)
 
 
 def aaorun_command(command, file, options=None, output=None,
                    idx_file='koala.idx',
-                   aaorun='aaorun', wdir=None, **kwargs):
+                   aaorun='aaorun', wdir=None, timeout=600, **kwargs):
     """Create a tramline file from fibre flat.
 
     params
@@ -324,10 +324,7 @@ def aaorun_command(command, file, options=None, output=None,
     """
     if wdir is None:
         wdir = os.path.dirname(file)
-    if output is None:
-        output = ''
-    else:
-        output = '> ' + output
+
     if options is None:
         cmd_options = ' '.join(['-idxfile %s' % idx_file, '-wdir %s' % wdir])
     else:
@@ -335,16 +332,47 @@ def aaorun_command(command, file, options=None, output=None,
         extra_options.append('-idxfile %s' % idx_file)
         extra_options.append('-wdir %s' % wdir)
         cmd_options = ' '.join(extra_options)
-    aaorun_command = ' '.join([aaorun, command, file, cmd_options, output])
-    # TODO: This should be replaced  by subprocess
-    os.system(aaorun_command)
-    aaorun_cleanup()
+    # Combine all command arguments
+    aaorun_command = ' '.join([aaorun, command, file, cmd_options])
+    # Run the command
+    if output is None:
+        try:
+            process = subprocess.run(aaorun_command, shell=True,
+                                     timeout=timeout, stdout=subprocess.PIPE,
+                                     text=True)
+            aaorun_cleanup()
+            if process.returncode != 0:
+                print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
+                      format(aaorun_command, process.stderr))
+                return 1
+            else:
+                return 0
+        except subprocess.TimeoutExpired:
+            print('process ran too long')
+            aaorun_cleanup()
+            return 0
+    else:
+        with open(output, 'w') as outfile:
+            try:
+                process = subprocess.run(aaorun_command, shell=True,
+                                         timeout=timeout, stdout=outfile,
+                                         text=True)
+                aaorun_cleanup()
+                if process.returncode != 0:
+                    print('[aaorun] · WARNING: Command \n {} \n FAILED! \n See {}'.
+                          format(aaorun_command, output))
+                    return 1
+                else:
+                    return 0
+            except subprocess.TimeoutExpired:
+                print('process ran too long')
+                aaorun_cleanup()
+                return 0
 
 
 if __name__ == '__main__':
-
     aaorun_command('reduce_bias',
-        file='/media/pablo/toshiba-pab/reduce/obs_run_0/darks/ccd_1/21oct10048.fits',
-        aaorun='aaorun')
+                   file='/media/pablo/toshiba-pab/test/20201021/ccd_1/21oct10001.fits',
+                   aaorun='aaorun')
 
 # Mr Krtxo
