@@ -10,7 +10,6 @@ import numpy as np
 from astropy.io import fits
 from matplotlib import pyplot as plt
 
-
 def check_image(path, percentiles=[1, 5, 16, 50, 84, 95, 99]):
     """blah."""
     master = fits.getdata(path)
@@ -22,34 +21,69 @@ def check_image(path, percentiles=[1, 5, 16, 50, 84, 95, 99]):
         return fig, percents
     else:
         ax.hist(master.flatten(), range=[percents[0], percents[-1]],
-                bins=master.flatten().size//1000, log=True)
+                bins=master.flatten().size//1000, log=True, color='k')
         ax.set_xlabel('counts')
         ax.set_ylabel('# pixels')
         for pcnt in percents:
-            ax.axvline(pcnt, ls='-', color='k')
+            ax.axvline(pcnt, ls='-', color='r')
         ax = fig.add_subplot(122)
         mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
-                             cmap='nipy_spectral', aspect='auto', origin='lower')
+                             cmap='nipy_spectral', aspect='auto',
+                             origin='lower')
         plt.colorbar(mappable, label='counts')
         return fig, percents
 
-# def check_arc(path, percentiles=[5, 16, 50, 84, 95]):
-#     """blah."""
-#     master = fits.getdata(path)
-#     percents = np.nanpercentile(master.flatten(), percentiles)
-#     fig = plt.figure(figsize=(10, 5))
-#     ax = fig.add_subplot(121)
-#     ax.hist(master.flatten(), range=[percents[0], percents[-1]],
-#             bins=master.flatten().size//1000, log=True)
-#     ax.set_xlabel('counts')
-#     ax.set_ylabel('# pixels')
-#     for pcnt in percents:
-#         ax.axvline(pcnt, ls='-', color='k')
-#     ax = fig.add_subplot(122)
-#     mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
-#                          cmap='nipy_spectral', aspect='auto', origin='lower')
-#     plt.colorbar(mappable, label='counts')
-#     return fig, percents
+
+def check_tramline(path, plot=True):
+    """blah."""
+    with fits.open(path) as f:
+        median_fwhm = f[0].header['MWIDTH']
+        fibrepos = f[0].data
+        mean_amplitude = f[1].data
+    # Dispersion in pixels along the spectral axis
+    fibrepos_disp = np.std(fibrepos, axis=1)
+    intensity_disp = np.std(mean_amplitude, axis=0)
+    # Quality assesment
+    fibre_separation = (median_fwhm > 2) & (median_fwhm < 3)
+    smoothness = ((fibrepos_disp.max() < 10) & (fibrepos_disp.min() > 0)
+                  & (intensity_disp.max() < 10) & (intensity_disp.min() > 0))
+    if fibre_separation & smoothness:
+        bad_tramline = False
+    else:
+        print('[QC] · Bad tramline')
+        bad_tramline = True
+    # Quality control plots
+    if plot:
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6, 6),
+                                gridspec_kw=dict(wspace=0.5, hspace=0.5))
+        fig.suptitle(path, fontsize=8)
+        ax = axs[0, 0]
+        ax.set_title(r'$\mu(\lambda)$')
+        mappable = ax.imshow(fibrepos, aspect='auto', origin='lower')
+        plt.colorbar(mappable, ax=ax)
+        ax.set_ylabel('Fibre')
+        ax.set_xlabel(r'$\lambda (pix)$')
+        ax = axs[0, 1]
+        ax.set_title('Median FWHM\nbetween fibres: {:.2f} pix'.format(
+            median_fwhm))
+        ax.plot(fibrepos_disp)
+        ax.set_ylabel(r'$\sigma(\mu)$')
+        ax.set_xlabel('Fibre')
+        ax = axs[1, 0]
+        ax.set_title(r'$I(\lambda)$')
+        mappable = ax.imshow(mean_amplitude, aspect='auto', origin='lower')
+        plt.colorbar(mappable, ax=ax)
+        ax.set_ylabel('Fibre')
+        ax.set_xlabel(r'$\lambda (pix)$')
+        ax = axs[1, 1]
+        ax.plot(intensity_disp)
+        ax.set_ylabel(r'$\sigma(I)$')
+        ax.set_xlabel(r'$\lambda (pix)$')
+        fig.savefig(path.replace('.fits', '.png'), bbox_inches='tight')
+        plt.clf()
+        plt.close(fig)
+    return bad_tramline
+
 
 def clean_nan(path):
     """blah..."""
