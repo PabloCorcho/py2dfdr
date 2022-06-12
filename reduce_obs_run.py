@@ -552,7 +552,8 @@ class ReduceObsRun(object):
                         self.log.write(
                             '--> [{}] [{}] [{}] [ERROR] FFLAT *NOT* found at {}\n'.format(
                                 night, ccd, grating, path_to_fflat))
-                        raise NameError('[ERROR] Unable to find a FFLAT (see log)')        
+                        raise NameError(
+                            '[ERROR] Unable to find a FFLAT (see log)')
 
     def reduce_object(self):
         """blah."""
@@ -623,6 +624,10 @@ class ReduceObsRun(object):
                             bbox_inches='tight')
                         plt.clf(); plt.close()
 
+    def combine_science_flats(self):
+        """Combine all dome/sky flats into a master file for each night."""
+        pass
+
 
 if __name__ == '__main__':
 
@@ -648,12 +653,12 @@ if __name__ == '__main__':
     redOR.get_master_lflats()
     redOR.get_tlm_maps()
     redOR.get_arcs()
+    redOR.get_fibreflats()
+    # redOR.reduce_fflats()
 
-    redOR.reduce_fflats()
     redOR.reduce_object()
     
     
-    # redOR.get_fibreflats()
 
     redOR.log.close()
     tend = time.time()

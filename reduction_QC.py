@@ -11,7 +11,7 @@ from astropy.io import fits
 from matplotlib import pyplot as plt
 
 
-def check_image(path, percentiles=[5, 16, 50, 84, 95]):
+def check_image(path, percentiles=[1, 5, 16, 50, 84, 95, 99]):
     """blah."""
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
