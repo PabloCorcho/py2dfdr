@@ -17,6 +17,14 @@ import logging
 import datetime
 
 
+# # create formatter
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# # add formatter to ch
+# ch.setFormatter(formatter)
+
+
 class ReduceObsRun(object):
     """Reduce KOALA observing runs."""
 
@@ -24,8 +32,9 @@ class ReduceObsRun(object):
         self.obs_run_path = obs_run_path
         # LOG FILE ------------------------------------------------------------
         logging.basicConfig(
+            # format='%-- (levelname)s: %(message)s',
             filename=os.path.join(self.obs_run_path, 'OR_reduction.log'),
-            level=logging.INFO)
+            level=logging.DEBUG)
         logging.info(
             '-'*50 + '\n'
             'Initialising OR reduction process at:\n   {} \n'.format(
@@ -128,15 +137,12 @@ class ReduceObsRun(object):
     def get_master_darks(self, exptime='1800.0'):
         """blah."""
         self.master_darks = {}
-        print(' --> Searching master dark files\n')
         logging.info(' --> Searching master dark files\n')
         for ccd in self.ccds:
             path_to_master = os.path.join(
                 self.obs_run_path, 'darks', ccd, exptime,
                 'DARKcombined_{}.fits'.format(exptime))
             if os.path.isfile(path_to_master):
-                print('--> [{}] MASTERDARK found at {}\n'.format(
-                        ccd, path_to_master))
                 logging.info('--> [{}] MASTERDARK found at {}\n'.format(
                     ccd, path_to_master))
                 self.master_darks[ccd] = path_to_master
@@ -613,9 +619,6 @@ if __name__ == '__main__':
     redOR.get_arcs()
     redOR.get_fibreflats()
     # redOR.reduce_fflats()
-
-    redOR.reduce_object()
-
-    redOR.log.close()
+    # redOR.reduce_object()
     tend = time.time()
     print('\n\n ### Elapsed time (hrs): ', (tend - tstart)/3600)
