@@ -8,6 +8,7 @@ path_to_data = '/Users/pcorcho/obs_data/HI-KIDS'  # Path to folder containing al
 archive = KOALA_archive(path_to_data)
 
 archive.find_nights()
-archive.create_observing_runs()
 archive.get_night_info()
-archive.create_reduction_folder(output_path=path_to_data.replace('HI-KIDS', 'hikids_obsruns'))
+archive.create_observing_runs()
+print(archive.observing_runs)
+#archive.create_reduction_folder(output_path=path_to_data.replace('HI-KIDS', 'hikids_obsruns'))
