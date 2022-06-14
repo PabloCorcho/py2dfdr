@@ -137,7 +137,7 @@ dmypy.json
 
 # Some testing / misc files
 reduce_hikids.py
-create_hikids_reduction_data.py
+# create_hikids_reduction_data.py
 data/
 misc/
 __pycache__/
