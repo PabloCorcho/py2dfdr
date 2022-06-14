@@ -9,6 +9,7 @@ from glob import glob
 from astropy.time import Time
 import shutil
 import yaml
+import logging
 
 class KOALA_archive(object):
     """blah..."""
@@ -305,14 +306,16 @@ class KOALA_archive(object):
 # =============================================================================
 # 2dfdr aaorun wrapper
 # =============================================================================
-def aaorun_cleanup():
+def aaorun_cleanup(log=False):
     """blah..."""
-    subprocess.run('clean >/dev/null 2>&1', shell=True, timeout=60)
+    process = subprocess.run('cleanup', shell=True, timeout=60, stdout=subprocess.PIPE, text=True)
+    if log:
+        logging.info('[aaorun] Cleaning')
 
 
 def aaorun_command(command, file, options=None, output=None,
                    idx_file='koala.idx',
-                   aaorun='aaorun', wdir=None, timeout=600, **kwargs):
+                   aaorun='aaorun', wdir=None, timeout=900, log=False):
     """Create a tramline file from fibre flat.
 
     params
@@ -340,34 +343,48 @@ def aaorun_command(command, file, options=None, output=None,
             process = subprocess.run(aaorun_command, shell=True,
                                      timeout=timeout, stdout=subprocess.PIPE,
                                      text=True)
-            aaorun_cleanup()
+            aaorun_cleanup(log=log)
             if process.returncode != 0:
-                print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                      format(aaorun_command, process.stderr))
+                if log:
+                    logging.warning('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
+                          format(aaorun_command, process.stderr))
+                else:
+                    print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
+                          format(aaorun_command, process.stderr))
                 return 1
             else:
                 return 0
         except subprocess.TimeoutExpired:
-            print('process ran too long')
-            aaorun_cleanup()
-            return 0
+            if log:
+                logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+            else:
+                print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+            aaorun_cleanup(log=log)
+            return 1
     else:
         with open(output, 'w') as outfile:
             try:
                 process = subprocess.run(aaorun_command, shell=True,
                                          timeout=timeout, stdout=outfile,
                                          text=True)
-                aaorun_cleanup()
+                aaorun_cleanup(log=log)
                 if process.returncode != 0:
-                    print('[aaorun] · WARNING: Command \n {} \n FAILED! \n See {}'.
-                          format(aaorun_command, output))
+                    if log:
+                        logging.warning('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
+                                        format(aaorun_command, process.stderr))
+                    else:
+                        print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
+                              format(aaorun_command, process.stderr))
                     return 1
                 else:
                     return 0
             except subprocess.TimeoutExpired:
-                print('process ran too long')
-                aaorun_cleanup()
-                return 0
+                if log:
+                    logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                else:
+                    print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                aaorun_cleanup(log=log)
+                return 1
 
 
 if __name__ == '__main__':

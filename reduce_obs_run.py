@@ -34,7 +34,7 @@ class ReduceObsRun(object):
         logging.basicConfig(
             # format='%-- (levelname)s: %(message)s',
             filename=os.path.join(self.obs_run_path, 'OR_reduction.log'),
-            level=logging.DEBUG)
+            level=logging.INFO)
         logging.info(
             '-'*50 + '\n'
             'Initialising OR reduction process at:\n   {} \n'.format(
@@ -61,9 +61,9 @@ class ReduceObsRun(object):
         logging.info('--> OBJECT configuration file: %s\n' % self.object_idx_file)
 
         # Load yml file containing data description ---------------------------
-        self.load_obs_run_yml()
+        self.load_obs_run_yml(**kwargs)
 
-    def load_obs_run_yml(self):
+    def load_obs_run_yml(self, **kwargs):
         """Load yaml file of the Observing Run."""
         logging.info('Loading yml file containing the OR data\n')
         with open(os.path.join(self.obs_run_path, "obs_run_info.yml"),
@@ -75,7 +75,9 @@ class ReduceObsRun(object):
                 logging.error(exc)
         # Get all the nights contained within the observing run
         self.nights = list(self.obs_run_info.keys())
-        [self.nights.remove(i) for i in ['bias', 'darks', 'fflats']]
+        # Extra
+        night_to_remove = kwargs.get('night_to_remove', [])
+        [self.nights.remove(i) for i in ['bias', 'darks', 'fflats'] + night_to_remove]
 
     def reduce_bias(self):
         """blah."""
@@ -115,7 +117,8 @@ class ReduceObsRun(object):
                 aaorun_command(command='combine_image',
                                file='\"' + darks_to_combine + '\"',
                                options=['-COMBINEDFILE %s' % masterdark_name],
-                               output=logmaster)
+                               output=logmaster,
+                               log=True)
                 logging.info(
                     '---> MASTERDARK file saved as %s \n' % masterdark_name)
                 logging.info('---> MASTERDARK log saved as %s \n' % logmaster)
@@ -176,7 +179,8 @@ class ReduceObsRun(object):
                     aaorun_command('reduce_lflat', path_to_fflat,
                                    idx_file=self.lflat_idx_file,
                                    output=path_to_fflat.replace(
-                                       '.fits', '_log.txt'))
+                                       '.fits', '_log.txt'),
+                                   log=True)
                     self.master_lflats[ccd][grating][fflat_exptime].append(
                         path_to_fflat.replace('.fits', 'red.fits'))
                 for exptime in self.master_lflats[ccd][grating].keys():
@@ -193,7 +197,8 @@ class ReduceObsRun(object):
                     aaorun_command(command='combine_image',
                                    file='\"' + fflats_to_combine + '\"',
                                    options=['-COMBINEDFILE %s' % masterfflat_name],
-                                   output=logmaster)
+                                   output=logmaster,
+                                   log=True)
                     self.master_lflats[ccd][grating][exptime] = masterfflat_name
 
                     logging.info(
@@ -272,27 +277,36 @@ class ReduceObsRun(object):
                         aaorun_command('make_tlm', path_to_fibreflat,
                                        idx_file=self.fibreflat_idx_file,
                                        output=path_to_fibreflat.replace(
-                                           '.fits', '_log.txt'))
-                        exptimes.append(float(tram_file['EXPTIME']))
-                        names.append(name)
+                                           '.fits', '_log.txt'),
+                                        log=True)
+                        bad_tlm = QC.check_tramline(path_to_fibreflat.replace('.fits', 'tlm.fits'))
+                        if not bad_tlm:
+                            exptimes.append(float(tram_file['EXPTIME']))
+                            names.append(name)
+                        logging.info('[QC] ·  Bad tramline: {}'. format(
+                            bad_tlm))
                     recommended_exp_time = kcs.lflat_time[ccd][
                         grating.split('_')[0]]
-                    best = np.argmin(
-                        np.abs(np.array(exptimes) - recommended_exp_time))
-                    best_fibreflat = os.path.join(
-                        self.obs_run_path, night, ccd,
-                        grating, 'fibreflat',
-                        self.obs_run_info[night][ccd][grating]['fibreflat'][
-                            names[best]]['PATH'].replace('.fits', 'tlm.fits'))
+                    if len(exptimes) > 0:
+                        best = np.argmin(
+                            np.abs(np.array(exptimes) - recommended_exp_time))
+                        best_fibreflat = os.path.join(
+                            self.obs_run_path, night, ccd,
+                            grating, 'fibreflat',
+                            self.obs_run_info[night][ccd][grating]['fibreflat'][
+                                names[best]]['PATH'].replace('.fits', 'tlm.fits'))
+                        logging.info('· [{}] [{}] [{}]'.format(night, ccd, grating)
+                                     + ' BEST RECOMMENDED TRAM: %s\n'
+                                     % best_fibreflat)
+                        self.tlm_maps[night][ccd][grating] = best_fibreflat
+                        recommended = os.path.join(
+                            os.path.dirname(best_fibreflat), 'RECOMMENDED_TRAM')
+                        with open(recommended, 'w') as f:
+                            f.write(best_fibreflat)
+                    else:
+                        # TODO
+                        pass
 
-                    logging.info('· [{}] [{}] [{}]'.format(night, ccd, grating)
-                                 + ' BEST RECOMMENDED TRAM: %s\n'
-                                 % best_fibreflat)
-                    self.tlm_maps[night][ccd][grating] = best_fibreflat
-                    recommended = os.path.join(
-                        os.path.dirname(best_fibreflat), 'RECOMMENDED_TRAM')
-                    with open(recommended, 'w') as f:
-                        f.write(best_fibreflat)
 
     def get_tlm_maps(self):
         """blah."""
@@ -358,28 +372,30 @@ class ReduceObsRun(object):
                             self.obs_run_path, night, ccd, grating, 'arcs',
                             arc_file['PATH'])
                         # CALL TO AAORUN
-                        aaorun_command(
-                            'reduce_arc', path_to_arc,
-                            idx_file=self.arc_idx_file,
-                            options=['-DARK_FILENAME {}'.format(
-                                self.master_darks[ccd]),
-                                '-TLMAP_FILENAME {}'.format(
-                                    self.tlm_maps[night][ccd][grating])],
-                            output=path_to_arc.replace('.fits', '_log.txt')
-                            )
-                        arc_fig, arc_pcnt = QC.check_image(
-                            path_to_arc.replace('.fits', 'red.fits'))
-                        arc_fig.savefig(
-                            os.path.join(os.path.dirname(path_to_arc),
-                                         'arc_{}_{}.png'.format(arc_name,
-                                                                arc_exptime)),
-                            bbox_inches='tight')
-                        plt.clf()
-                        plt.close()
+                        command_success = aaorun_command(
+                                'reduce_arc', path_to_arc,
+                                idx_file=self.arc_idx_file,
+                                options=['-DARK_FILENAME {}'.format(
+                                    self.master_darks[ccd]),
+                                    '-TLMAP_FILENAME {}'.format(
+                                        self.tlm_maps[night][ccd][grating])],
+                                output=path_to_arc.replace('.fits', '_log.txt'),
+                                log=True
+                                )
+                        if command_success == 0:
+                            arc_fig, arc_pcnt = QC.check_image(
+                                path_to_arc.replace('.fits', 'red.fits'))
+                            arc_fig.savefig(
+                                os.path.join(os.path.dirname(path_to_arc),
+                                             '{}_arc_{}_{}.png'.format(name.split('/')[-1], arc_name,
+                                                                       arc_exptime)),
+                                bbox_inches='tight')
+                            plt.clf()
+                            plt.close()
 
-                        names.append(name)
-                        exptimes.append(arc_exptime)
-                        arcnames.append(arc_name)
+                            names.append(name)
+                            exptimes.append(arc_exptime)
+                            arcnames.append(arc_name)
 
                     rec_arc_name, rec_exptime = kcs.arc_time[ccd][
                         grating.split('_')[0]]
@@ -468,26 +484,28 @@ class ReduceObsRun(object):
                                                      ccd, grating, 'fibreflat',
                                                      object_file['PATH'])
                         # CALL TO AAORUN
-                        aaorun_command(
-                            'reduce_fflat', path_to_fflat,
-                            idx_file=self.fibreflat_idx_file,
-                            options=[
-                                '-DARK_FILENAME {}'.format(
-                                    self.master_darks[ccd]),
-                                '-TLMAP_FILENAME {}'.format(
-                                    self.tlm_maps[night][ccd][grating]),
-                                '-WAVEL_FILENAME {}'.format(
-                                    self.arcs_selected[night][ccd][grating])],
-                            output=path_to_fflat.replace('.fits', '_log.txt')
-                            )
-                        fflat_fig, fflat_pcnt = QC.check_image(
-                            path_to_fflat.replace('.fits', 'red.fits'))
-                        fflat_fig.savefig(
-                            os.path.join(os.path.dirname(path_to_fflat),
-                                         '{}.png'.format(name)),
-                            bbox_inches='tight')
-                        plt.clf()
-                        plt.close()
+                        command_success = aaorun_command(
+                                'reduce_fflat', path_to_fflat,
+                                idx_file=self.fibreflat_idx_file,
+                                options=[
+                                    '-DARK_FILENAME {}'.format(
+                                        self.master_darks[ccd]),
+                                    '-TLMAP_FILENAME {}'.format(
+                                        self.tlm_maps[night][ccd][grating]),
+                                    '-WAVEL_FILENAME {}'.format(
+                                        self.arcs_selected[night][ccd][grating])],
+                                output=path_to_fflat.replace('.fits', '_log.txt'),
+                                log=True
+                                )
+                        if command_success == 0:
+                            fflat_fig, fflat_pcnt = QC.check_image(
+                                path_to_fflat.replace('.fits', 'red.fits'))
+                            fflat_fig.savefig(
+                                os.path.join(os.path.dirname(path_to_fflat),
+                                             '{}.png'.format(name)),
+                                bbox_inches='tight')
+                            plt.clf()
+                            plt.close()
                     self.fibreflat_selected[night][ccd][grating] = (
                         self.fibreflat_selected[night][ccd][grating].replace(
                             'tlm.fits', 'red.fits'))
@@ -563,30 +581,32 @@ class ReduceObsRun(object):
                             self.obs_run_path, night, ccd, grating, 'sci',
                             object_file['PATH'])
                         # CALL TO AAORUN
-                        aaorun_command(
-                            'reduce_object', path_to_obj,
-                            idx_file=self.object_idx_file,
-                            options=[
-                                '-DARK_FILENAME {}'.format(
-                                    self.master_darks[ccd]),
-                                '-FFLAT_FILENAME {}'.format(
-                                    self.fibreflat_selected[night][ccd][
-                                        grating]),
-                                '-TLMAP_FILENAME {}'.format(
-                                    self.tlm_maps[night][ccd][grating]),
-                                '-WAVEL_FILENAME {}'.format(
-                                    self.arcs_selected[night][ccd][grating])],
-                            output=path_to_obj.replace('.fits', '_log.txt')
-                            )
-                        obj_fig, obj_pcnt = QC.check_image(
-                            path_to_obj.replace('.fits', 'red.fits'))
-                        obj_fig.suptitle(obj_name, fontsize=12)
-                        obj_fig.savefig(
-                            os.path.join(os.path.dirname(path_to_obj),
-                                         '{}.png'.format(name)),
-                            bbox_inches='tight')
-                        plt.clf()
-                        plt.close()
+                        command_success =aaorun_command(
+                                'reduce_object', path_to_obj,
+                                idx_file=self.object_idx_file,
+                                options=[
+                                    '-DARK_FILENAME {}'.format(
+                                        self.master_darks[ccd]),
+                                    '-FFLAT_FILENAME {}'.format(
+                                        self.fibreflat_selected[night][ccd][
+                                            grating]),
+                                    '-TLMAP_FILENAME {}'.format(
+                                        self.tlm_maps[night][ccd][grating]),
+                                    '-WAVEL_FILENAME {}'.format(
+                                        self.arcs_selected[night][ccd][grating])],
+                                output=path_to_obj.replace('.fits', '_log.txt'),
+                                log=True
+                                )
+                        if command_success == 0:
+                            obj_fig, obj_pcnt = QC.check_image(
+                                path_to_obj.replace('.fits', 'red.fits'))
+                            obj_fig.suptitle(obj_name, fontsize=12)
+                            obj_fig.savefig(
+                                os.path.join(os.path.dirname(path_to_obj),
+                                             '{}.png'.format(name)),
+                                bbox_inches='tight')
+                            plt.clf()
+                            plt.close()
 
     def combine_science_flats(self):
         """Combine all dome/sky flats into a master file for each night."""
@@ -605,20 +625,24 @@ if __name__ == '__main__':
         fibreflat_idx='koala_dark.idx',
         lflat_idx='koala_dark.idx',
         arcs_idx='koala_arcs.idx',
-        object_idx='koala_reduce.idx')
+        object_idx='koala_reduce.idx',
+        night_to_remove=['night_20220404'])
 
     # redOR.reduce_darks()
     # redOR.reduce_lflats()
-    # redOR.extract_tramlines()
-    # redOR.reduce_arcs()
 
+    #
 
     redOR.get_master_darks()
     redOR.get_master_lflats()
-    redOR.get_tlm_maps()
-    redOR.get_arcs()
-    redOR.get_fibreflats()
-    # redOR.reduce_fflats()
-    # redOR.reduce_object()
+    # redOR.get_tlm_maps()
+    # redOR.get_arcs()
+    # redOR.get_fibreflats()
+    # redOR.extract_tramlines()
+
+    #redOR.reduce_arcs()
+    #redOR.reduce_fflats()
+    redOR.reduce_object()
+
     tend = time.time()
     print('\n\n ### Elapsed time (hrs): ', (tend - tstart)/3600)
