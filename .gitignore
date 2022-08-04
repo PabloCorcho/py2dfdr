@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+src/py2dfdr/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -134,11 +135,3 @@ dmypy.json
 *.bak
 .DS_Store
 *.orig
-
-# Some testing / misc files
-reduce_hikids.py
-# create_hikids_reduction_data.py
-data/
-misc/
-__pycache__/
-__pycache__

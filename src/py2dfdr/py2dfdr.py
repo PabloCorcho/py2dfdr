@@ -15,13 +15,17 @@ class KOALA_archive(object):
     """blah..."""
 
     def __init__(self, root_path):
+        self.nights = None
+        self.dates = None
+        self.observing_runs = None
+        # ------------------------
         self.root_path = root_path
         if self.root_path[-1] != '/':
             self.root_path += '/'
 
     def find_nights(self):
         """blah."""
-        nights_path = glob(self.root_path + '*')
+        nights_path = np.sort(glob(self.root_path + '*'))
         # Remove any file that could be within the root folder
         nights_path = list(filter(os.path.isdir, nights_path))
         # Check if there is any night
@@ -38,6 +42,8 @@ class KOALA_archive(object):
                     folder[:4] + '-' + folder[4:6] + '-'+folder[6:]).jd
                 self.dates[i] = julian_date
                 nights[folder] = {'JD': julian_date}
+            sortpos = np.argsort(self.dates)
+
             self.nights = nights
 
     def get_night_info(self):
@@ -51,7 +57,8 @@ class KOALA_archive(object):
                 content = self.get_content(ccd)
                 self.nights[night]['content'][ccd.split('/')[-1]] = content
 
-    def get_content(self, path):
+    @staticmethod
+    def get_content(path):
         """
         Return a dictionary containing the description of each file within a given path folder.
 
@@ -211,13 +218,13 @@ class KOALA_archive(object):
                                    os.path.join(obs_run_path, 'darks',
                                                 ccd, exptime, file['PATH']))
                             self.observing_runs[
-                                obs_run]['darks'][ccd][exptime][fid] = (file)
+                                obs_run]['darks'][ccd][exptime]['_'.join((nightid, fid))] = (file)
                         elif file['DESC'] == 'BIAS':
                             copier(os.path.join(path_to_night_ccd,
                                                 file['PATH']),
                                    os.path.join(obs_run_path, 'bias',
                                                 ccd, file['PATH']))
-                            self.observing_runs[obs_run]['bias'][ccd][fid] = (
+                            self.observing_runs[obs_run]['bias'][ccd]['_'.join((nightid, fid))] = (
                                 file)
                         elif file['DESC'] == 'LFLAT':
                             grating = file['GRATID'] + '_{:.0f}'.format(
@@ -235,7 +242,7 @@ class KOALA_archive(object):
                                                 ccd, grating,
                                                 file['PATH']))
                             self.observing_runs[obs_run]['fflats'][ccd][
-                                grating][fid] = (file)
+                                grating]['_'.join((nightid, fid))] = (file)
                         else:
                             grating = file['GRATID'] + '_{:.0f}'.format(
                                 file['GRATWAVE'])
@@ -266,7 +273,7 @@ class KOALA_archive(object):
                                                     file['PATH']))
                                 self.observing_runs[obs_run][
                                     'night_' + nightid][ccd][
-                                    grating]['fibreflat'][fid] = file
+                                    grating]['fibreflat']['_'.join((nightid, fid))] = file
                             elif file['DESC'] == 'MFOBJECT':
                                 copier(os.path.join(path_to_night_ccd,
                                                     file['PATH']),
@@ -275,7 +282,7 @@ class KOALA_archive(object):
                                                     file['PATH']))
                                 self.observing_runs[obs_run][
                                     'night_' + nightid][ccd][
-                                    grating]['sci'][fid] = file
+                                    grating]['sci']['_'.join((nightid, fid))] = file
                             elif file['DESC'] == 'MFARC':
                                 copier(os.path.join(path_to_night_ccd,
                                                     file['PATH']),
@@ -284,7 +291,7 @@ class KOALA_archive(object):
                                                     file['PATH']))
                                 self.observing_runs[obs_run][
                                     'night_' + nightid][ccd][
-                                    grating]['arcs'][fid] = file
+                                    grating]['arcs']['_'.join((nightid, fid))] = file
             self.create_obs_run_info(self.observing_runs[obs_run],
                                      savepath=os.path.join(obs_run_path,
                                                            'obs_run_info'))
@@ -310,7 +317,7 @@ def aaorun_cleanup(log=False):
     """blah..."""
     process = subprocess.run('cleanup', shell=True, timeout=60, stdout=subprocess.PIPE, text=True)
     if log:
-        logging.info('[aaorun] Cleaning')
+        logging.info('· [aaorun] Cleaning')
 
 
 def aaorun_command(command, file, options=None, output=None,
@@ -336,53 +343,53 @@ def aaorun_command(command, file, options=None, output=None,
         extra_options.append('-wdir %s' % wdir)
         cmd_options = ' '.join(extra_options)
     # Combine all command arguments
-    aaorun_command = ' '.join([aaorun, command, file, cmd_options])
+    aaorun_cmd = ' '.join([aaorun, command, file, cmd_options])
     # Run the command
     if output is None:
         try:
-            process = subprocess.run(aaorun_command, shell=True,
+            process = subprocess.run(aaorun_cmd, shell=True,
                                      timeout=timeout, stdout=subprocess.PIPE,
                                      text=True)
             aaorun_cleanup(log=log)
             if process.returncode != 0:
                 if log:
                     logging.warning('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                          format(aaorun_command, process.stderr))
+                          format(aaorun_cmd, process.stderr))
                 else:
                     print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                          format(aaorun_command, process.stderr))
+                          format(aaorun_cmd, process.stderr))
                 return 1
             else:
                 return 0
         except subprocess.TimeoutExpired:
             if log:
-                logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
             else:
-                print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
             aaorun_cleanup(log=log)
             return 1
     else:
         with open(output, 'w') as outfile:
             try:
-                process = subprocess.run(aaorun_command, shell=True,
+                process = subprocess.run(aaorun_cmd, shell=True,
                                          timeout=timeout, stdout=outfile,
                                          text=True)
                 aaorun_cleanup(log=log)
                 if process.returncode != 0:
                     if log:
                         logging.warning('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                                        format(aaorun_command, process.stderr))
+                                        format(aaorun_cmd, process.stderr))
                     else:
                         print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                              format(aaorun_command, process.stderr))
+                              format(aaorun_cmd, process.stderr))
                     return 1
                 else:
                     return 0
             except subprocess.TimeoutExpired:
                 if log:
-                    logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                    logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
                 else:
-                    print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_command))
+                    print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
                 aaorun_cleanup(log=log)
                 return 1
 

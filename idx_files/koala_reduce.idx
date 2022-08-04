@@ -1,8 +1,8 @@
 # ====================================================
-# A USER CONFIGURATION FILE BASED ON koala_reduce.idx
+# A USER CONFIGURATION FILE BASED ON koala.idx
 # ====================================================
 
-DRC_INCLUDE /home/pablo/hikids/2dfdr_install/share/2dfdr/koala.idx
+DRC_INCLUDE /home/pablo/Software/2dfdr_install/share/2dfdr/koala.idx
 
 DRC_OVERRIDE_PAR USEBIASIM 0 REDUCE
 DRC_OVERRIDE_PAR USEDARKIM 1 REDUCE
@@ -120,5 +120,5 @@ DRC_OVERRIDE_PAR KOALA_SIGIORD 3 REDUCE
 DRC_OVERRIDE_PAR KOALA_BKG_TENS 1.0 REDUCE
 DRC_OVERRIDE_PAR KOALA_BKG_NSIG 3.0 REDUCE
 
-DRC_CONST_PAR BASE_CONFIG_FILE /home/pablo/hikids/2dfdr_install/share/2dfdr/koala.idx GLOBALS
+DRC_CONST_PAR BASE_CONFIG_FILE /home/pablo/Software/2dfdr_install/share/2dfdr/koala.idx GLOBALS
 

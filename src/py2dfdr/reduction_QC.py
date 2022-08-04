@@ -9,16 +9,20 @@ Created on Fri Apr  8 08:39:39 2022
 import numpy as np
 from astropy.io import fits
 from matplotlib import pyplot as plt
+import logging
 
-def check_image(path, percentiles=[1, 5, 16, 50, 84, 95, 99]):
+
+def check_image(path, percentiles=None, save_dir=None):
     """blah."""
+    logging.info('[QC] · QC plot \n   {}'.format(path))
+    if percentiles is None:
+        percentiles = [1, 5, 16, 50, 84, 95, 99]
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(121)
     if not np.isfinite(percents).all():
         print('WARNING: ALL PIXELS HAVE NAN COUNTS')
-        return fig, percents
     else:
         ax.hist(master.flatten(), range=[percents[0], percents[-1]],
                 bins=master.flatten().size//1000, log=True, color='k')
@@ -31,11 +35,16 @@ def check_image(path, percentiles=[1, 5, 16, 50, 84, 95, 99]):
                              cmap='nipy_spectral', aspect='auto',
                              origin='lower')
         plt.colorbar(mappable, label='counts')
-        return fig, percents
+    if save_dir is not None:
+        fig.savefig(save_dir, bbox_inches='tight')
+        logging.info('---> QC plot saved as {} \n'.format(save_dir))
+    plt.clf()
+    plt.close()
 
 
 def check_tramline(path, plot=True):
     """blah."""
+    logging.info('[QC] · Test for Tramline \n   {}'.format(path))
     with fits.open(path) as f:
         median_fwhm = f[0].header['MWIDTH']
         fibrepos = f[0].data
@@ -50,7 +59,6 @@ def check_tramline(path, plot=True):
     if fibre_separation & smoothness:
         bad_tramline = False
     else:
-        print('[QC] · Bad tramline')
         bad_tramline = True
     # Quality control plots
     if plot:
@@ -82,6 +90,7 @@ def check_tramline(path, plot=True):
         fig.savefig(path.replace('.fits', '.png'), bbox_inches='tight')
         plt.clf()
         plt.close(fig)
+    logging.info('[QC] ·  Bad tramline: {}'.format(bad_tramline))
     return bad_tramline
 
 
@@ -107,4 +116,5 @@ def clean_nan(path):
             hdul.flush()
         hdul.close()
 
-# Mr. Krtxo
+# Mr Krtxo \(ﾟ▽ﾟ)/
+

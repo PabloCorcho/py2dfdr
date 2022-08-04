@@ -1,8 +1,8 @@
 # ====================================================
-# A USER CONFIGURATION FILE BASED ON /home/pablo/hikids/2dfdr_install/share/2dfdr/aaomega.idx
+# A USER CONFIGURATION FILE BASED ON /home/pablo/hikids/2dfdr_install/share/2dfdr/koala.idx
 # ====================================================
 
-DRC_INCLUDE /home/pablo/hikids/2dfdr_install/share/2dfdr/aaomega.idx
+DRC_INCLUDE /home/pablo/Software/2dfdr_install/share/2dfdr/koala.idx
 
 DRC_OVERRIDE_PAR USEBIASIM 0 REDUCE
 DRC_OVERRIDE_PAR USEDARKIM 0 REDUCE
@@ -125,5 +125,5 @@ DRC_OVERRIDE_PAR KOALA_SCMBHW 0 REDUCE
 DRC_OVERRIDE_PAR KOALA_SCMBM A REDUCE
 DRC_OVERRIDE_PAR KOALA_SIGIORD 3 REDUCE
 
-DRC_CONST_PAR BASE_CONFIG_FILE /home/pablo/hikids/2dfdr_install/share/2dfdr/aaomega.idx GLOBALS
+DRC_CONST_PAR BASE_CONFIG_FILE /home/pablo/Software/2dfdr_install/share/2dfdr/koala.idx GLOBALS
 
