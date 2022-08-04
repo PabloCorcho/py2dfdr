@@ -1,0 +1,5 @@
+numpy~=1.19.1
+PyYAML~=5.3.1
+astropy~=5.0
+matplotlib~=3.5.1
+setuptools~=45.2.0

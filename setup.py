@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='py2dfdr',
     version='0.0.1',
-    packages=[''],
+    #packages=['py2dfdr'],
     url='https://github.com/PabloCorcho/py2dfdr',
     license='LICENSE.txt',
     author='Pablo Corcho-Caballero',
@@ -14,5 +14,8 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU License",
         "Operating System :: OS Independent",
-        ]
+        ],
+    package_dir={"": "src"},
+    include_package_data=True,
+    python_requires=">=3.6",
 )

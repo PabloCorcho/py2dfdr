@@ -8,9 +8,9 @@ Created on Fri Apr  8 15:50:34 2022
 
 import yaml
 import os
-from py2dfdr import aaorun_command
-import reduction_QC as QC
-import koala_cheatsheet as kcs
+from .py2dfdr import aaorun_command
+from . import reduction_QC as QC
+from . import koala_cheatsheet as kcs
 import numpy as np
 import logging
 import datetime
