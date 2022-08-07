@@ -10,8 +10,8 @@ redOR = red_obs.ReduceObsRun(
               'ccd_2'
               ],
         dark_idx='koala_dark.idx',
-        fibreflat_idx='koala_fflat.idx',
         lflat_idx='koala_dark.idx',
+        fibreflat_idx='koala_fflat.idx',
         arcs_idx='koala_arcs.idx',
         object_idx='koala_reduce.idx')
 
@@ -31,7 +31,7 @@ redOR = red_obs.ReduceObsRun(
 # redOR.reduce_fflats(timeout=300)
 # redOR.get_fibreflats()
 
-redOR.reduce_object(timeout=900)
+# redOR.reduce_object(timeout=900)
 
 
 

@@ -367,6 +367,8 @@ def aaorun_command(command, file, options=None, output=None,
     idx_file: (str) path to the idx file used for reducing data. Default is koala.idx
     aaorun: (str) path to the binary executable file
     """
+    if log:
+        logging.info('[aaorun] · Initialising AAORUN process: ' + command)
     if wdir is None:
         wdir = os.path.dirname(file)
 
@@ -389,7 +391,7 @@ def aaorun_command(command, file, options=None, output=None,
             if process.returncode != 0:
                 if log:
                     logging.warning('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
-                          format(aaorun_cmd, process.stderr))
+                                    format(aaorun_cmd, process.stderr))
                 else:
                     print('[aaorun] · WARNING: Command \n {} \n FAILED! \n {}'.
                           format(aaorun_cmd, process.stderr))
@@ -422,9 +424,10 @@ def aaorun_command(command, file, options=None, output=None,
                     return 0
             except subprocess.TimeoutExpired:
                 if log:
-                    logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
+                    logging.warning('[aaorun] · WARNING: Command \n {} \n  Ran too long (>{:.1f})'.format(aaorun_cmd,
+                                                                                                          timeout))
                 else:
-                    print('[aaorun] · WARNING: Command \n {} \n  Ran too long'.format(aaorun_cmd))
+                    print('[aaorun] · WARNING: Command \n {} \n  Ran too long (>{:.1f})'.format(aaorun_cmd, timeout))
                 aaorun_cleanup(log=log)
                 return 1
 

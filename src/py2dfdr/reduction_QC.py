@@ -12,17 +12,21 @@ from matplotlib import pyplot as plt
 import logging
 
 
-def check_image(path, percentiles=None, save_dir=None):
+def check_image(path, percentiles=None, save_dir=None, title=None):
     """blah."""
-    logging.info('[QC] · QC plot \n   {}'.format(path))
+    logging.info('[QC] · QC plot for:\n   {}'.format(path))
     if percentiles is None:
         percentiles = [1, 5, 16, 50, 84, 95, 99]
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
     fig = plt.figure(figsize=(10, 5))
+    if title is not None:
+        fig.suptitle(title)
+    else:
+        fig.suptitle(path)
     ax = fig.add_subplot(121)
     if not np.isfinite(percents).all():
-        print('WARNING: ALL PIXELS HAVE NAN COUNTS')
+        logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
     else:
         ax.hist(master.flatten(), range=[percents[0], percents[-1]],
                 bins=master.flatten().size//1000, log=True, color='k')
@@ -37,7 +41,7 @@ def check_image(path, percentiles=None, save_dir=None):
         plt.colorbar(mappable, label='counts')
     if save_dir is not None:
         fig.savefig(save_dir, bbox_inches='tight')
-        logging.info('---> QC plot saved as {} \n'.format(save_dir))
+        logging.info('[QC] Plot saved as:\n {}'.format(save_dir))
     plt.clf()
     plt.close()
 
@@ -49,14 +53,14 @@ def check_saturated(path, sat_level=65500, log=True):
     finite_values = np.isfinite(file) & (file < sat_level)
     frac_sat = finite_values[~finite_values].size / finite_values.size
     if log:
-        logging.info('[QC] · Checking saturation for\n   {}'.format(path))
+        logging.info('[QC] · Checking saturation levels for\n   {}'.format(path))
         logging.info('[QC] · Fraction of saturated pixels={:.3f}'.format(frac_sat))
     return frac_sat
 
 
 def check_tramline(path, plot=True):
     """blah."""
-    logging.info('[QC] · Test for Tramline \n   {}'.format(path))
+    logging.info('[QC] · Test for Tramline:\n   {}'.format(path))
     with fits.open(path) as f:
         median_fwhm = f[0].header['MWIDTH']
         fibrepos = f[0].data
@@ -74,6 +78,7 @@ def check_tramline(path, plot=True):
         bad_tramline = True
     # Quality control plots
     if plot:
+        output = path.replace('.fits', '.png')
         fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(6, 6),
                                 gridspec_kw=dict(wspace=0.5, hspace=0.5))
         fig.suptitle(path, fontsize=8)
@@ -99,9 +104,10 @@ def check_tramline(path, plot=True):
         ax.plot(intensity_disp)
         ax.set_ylabel(r'$\sigma(I)$')
         ax.set_xlabel(r'$\lambda (pix)$')
-        fig.savefig(path.replace('.fits', '.png'), bbox_inches='tight')
+        fig.savefig(output, bbox_inches='tight')
         plt.clf()
         plt.close(fig)
+        logging.info('[QC] ·  Plot saved as:\n {}'.format(output))
     logging.info('[QC] ·  Bad tramline: {}'.format(bad_tramline))
     return bad_tramline
 

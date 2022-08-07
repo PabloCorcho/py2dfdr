@@ -9,14 +9,14 @@ def missing_idx(file_name):
 
 
 def missing_yml(file_name):
-    logging.error('· [ERROR] Unable to load yml file\n')
+    logging.error('· [ERROR] Unable to load yml file')
     logging.error(yaml.YAMLError)
     raise NameError(yaml.YAMLError)
 
 
 def missing_master(file_name):
     logging.error(
-        '--> [ERROR] MASTERDARK *NOT* found at {}\n'.format(
+        '--> [ERROR] MASTERDARK *NOT* found at:\n  {}'.format(
             file_name))
     raise NoMasterFileError(file_name)
 
@@ -26,8 +26,8 @@ def missing_master(file_name):
 # -------------------------------------------------------
 def log_header(file_name):
     """Make a pretty header line for a process."""
-    logging.info('\n' + '-'*50 + '\n    {}    \n'.format(file_name)
-                 + '-'*50 + '\n')
+    logging.info('-'*50 + '\n    {}    \n'.format(file_name)
+                 + '-'*50)
 
 
 # -------------------------------------------------------
