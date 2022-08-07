@@ -11,8 +11,38 @@ import shutil
 import yaml
 import logging
 
+
 class KOALA_archive(object):
-    """blah..."""
+    """This class allows the user to classify and extract all the information from a set of observing runs.
+
+    Attributes
+    ----------
+    - nights: (dict) Collection ob observing nights with file information.
+    - dates: (array) Observing nights julian dates.
+    - observing_runs: (dict) Collection of observing runs with file information.
+    - root_path: (str) Path to the directory containing all the individual observing nights.
+
+    Methods
+    -------
+    - find_nights
+    - get_night_info
+    - get_content
+    - filter_night_files
+    - create_observing_runs
+    - create_obs_run_info
+    - make_dir
+
+    Example
+    -------
+    # Create an archive classifier
+    archive = KOALA_archive(path_to_data)
+    # Find all the nigths within 'path_to_data'
+    archive.find_nights()
+    # Extract the information of each file for every night
+    archive.get_night_info()
+    # Create a directory containing each observing run using symbolic links
+    archive.create_reduction_folder(output_path=new_working_dir_path, hard=False)
+    """
 
     def __init__(self, root_path):
         self.nights = None
@@ -62,11 +92,13 @@ class KOALA_archive(object):
         """
         Return a dictionary containing the description of each file within a given path folder.
 
-        ----
         params:
-            path (str): path to the data
-        ----
-        returns: files (dict)
+        ------
+        - path (str): path to the data
+
+        returns:
+        --------
+         - files: (dict)
         """
         # change the working directory
         os.chdir(path)
@@ -324,6 +356,9 @@ def aaorun_command(command, file, options=None, output=None,
                    idx_file='koala.idx',
                    aaorun='aaorun', wdir=None, timeout=900, log=False):
     """Create a tramline file from fibre flat.
+
+    Link to 2dfdr repo:
+    https://dev.aao.org.au/rds/2dfdr
 
     params
     ----

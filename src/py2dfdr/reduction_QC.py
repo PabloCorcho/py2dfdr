@@ -42,6 +42,18 @@ def check_image(path, percentiles=None, save_dir=None):
     plt.close()
 
 
+def check_saturated(path, sat_level=65500, log=True):
+    """Compute the fraction of saturated (nan/inf) pixels."""
+
+    file = fits.getdata(path)
+    finite_values = np.isfinite(file) & (file < sat_level)
+    frac_sat = finite_values[~finite_values].size / finite_values.size
+    if log:
+        logging.info('[QC] · Checking saturation for\n   {}'.format(path))
+        logging.info('[QC] · Fraction of saturated pixels={:.3f}'.format(frac_sat))
+    return frac_sat
+
+
 def check_tramline(path, plot=True):
     """blah."""
     logging.info('[QC] · Test for Tramline \n   {}'.format(path))

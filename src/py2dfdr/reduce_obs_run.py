@@ -14,23 +14,44 @@ from . import koala_cheatsheet as kcs
 import numpy as np
 import logging
 import datetime
-import verbose
+from . import verbose
 
 
 class ReduceObsRun(object):
-    """Reduce KOALA observing runs."""
+    """Reduce KOALA observing runs.
+
+    Attributes
+    ----------
+    - obs_run_info
+    - obs_run_flags
+    - obs_run_path
+    - nights
+    - master_bias
+    - master_darks
+    - master_lflats
+    - master_tlm
+    - master_arcs
+    - master_fibreflats
+    - sat_fraction: (float, default=0.3) Maximum fraction of saturated pixels for preforming the reduction. Files with
+    values above this limit will be flagged as "SATURATED" and no reduction will be performed.
+    - sat_level: (float, default=65500.0) Number of counts for saturated pixels.
+    - verb: (bool, default=True) Whether to print reduction steps or only saving them on the log file.
+    """
 
     def __init__(self, obs_run_path, verb=True, **kwargs):
         """..."""
-        self.master_bias = None
         self.obs_run_info = None
+        self.obs_run_flags = None
         self.nights = None
+        self.master_bias = None
         self.master_darks = None
         self.master_lflats = None
         self.master_tlm = None
         self.master_arcs = None
         self.master_fibreflats = None
         # ---------------------------------------------------------------------
+        self.sat_fraction = kwargs.get('sat_frac', 0.3)
+        self.sat_level = kwargs.get('sat_level', 65500.)
         self.obs_run_path = obs_run_path
         # Initialise logging file
         logging.basicConfig(
@@ -40,7 +61,7 @@ class ReduceObsRun(object):
             # handlers=[
             #    logging.FileHandler("OR_reduction.log"),
             #    logging.StreamHandler()],
-            level=logging.DEBUG)
+            level=logging.INFO)
         if verb:
             logging.getLogger().addHandler(logging.StreamHandler())
         verbose.log_header('Initialising OR reduction process at:\n   {} \n'.format(
@@ -97,7 +118,15 @@ class ReduceObsRun(object):
             pass
         else:
             for name in names:
-                assert masters[name] is not None, get_method[name]()
+                if masters[name] is None:
+                    get_method[name]()
+
+    def reject_saturated_image(self, path):
+        sat_frac = QC.check_saturated(path, sat_level=self.sat_level, log=True)
+        if sat_frac >= self.sat_fraction:
+            return True
+        else:
+            return False
 
     def reduce_bias(self):
         """blah."""
@@ -109,10 +138,11 @@ class ReduceObsRun(object):
     def get_master_bias(self):
         pass
 
-    def reduce_darks(self):
+    def reduce_darks(self, timeout=900):
         """blah."""
         verbose.log_header('Reducing darks')
-        assert self.dark_idx_file is not None, verbose.missing_idx('dark_idx')
+        if self.dark_idx_file is None:
+            verbose.missing_idx('dark_idx')
         for ccd in self.ccds:
             for exptime in self.obs_run_info['darks'][ccd].keys():
                 all_darks = []
@@ -128,7 +158,8 @@ class ReduceObsRun(object):
                     aaorun_command('reduce_dark', path_to_dark,
                                    idx_file=self.dark_idx_file,
                                    output=path_to_dark.replace(
-                                       '.fits', '_log.txt'))
+                                       '.fits', '_log.txt'),
+                                   timeout=timeout)
                     all_darks.append(path_to_dark.replace('.fits', 'red.fits'))
                 logging.info(
                     '# Computing MASTERDARK [{}] [{}]\n'.format(ccd, exptime))
@@ -175,10 +206,11 @@ class ReduceObsRun(object):
             else:
                 verbose.missing_master(path_to_master)
 
-    def reduce_lflats(self):
+    def reduce_lflats(self, timeout=900):
         """blah."""
         verbose.log_header('Reducing long-slit (detector) flats')
-        assert self.lflat_idx_file is not None, verbose.missing_idx('lflat_idx')
+        if self.lflat_idx_file is None:
+            verbose.missing_idx('lflat_idx')
         self.master_lflats = {}
         for ccd in self.ccds:
             gratings = self.obs_run_info['fflats'][ccd].keys()
@@ -199,7 +231,8 @@ class ReduceObsRun(object):
                                    idx_file=self.lflat_idx_file,
                                    output=path_to_fflat.replace(
                                        '.fits', '_log.txt'),
-                                   log=True)
+                                   log=True,
+                                   timeout=900)
                     self.master_lflats[ccd][grating][fflat_exptime].append(
                         path_to_fflat.replace('.fits', 'red.fits'))
                 for exptime in self.master_lflats[ccd][grating].keys():
@@ -260,10 +293,11 @@ class ReduceObsRun(object):
                     else:
                         verbose.missing_master(path_to_master)
 
-    def extract_tramlines(self):
+    def extract_tramlines(self, timeout=900):
         """blah."""
         verbose.log_header('Starting tramline extraction from fibre flats')
-        assert self.fibreflat_idx_file is not None, verbose.missing_idx('fflat_idx')
+        if self.fibreflat_idx_file is None:
+            verbose.missing_idx('fflat_idx')
         self.master_tlm = {}
         for night in self.nights:
             self.master_tlm[night] = {}
@@ -274,19 +308,25 @@ class ReduceObsRun(object):
                     exptimes = []
                     names = []
                     for name, tram_file in self.obs_run_info[night][ccd][
-                        grating]['fibreflat'].items():
+                            grating]['fibreflat'].items():
                         logging.info('· [{}] [{}] [{}]'.format(night, ccd,
                                                                grating)
                                      + ' TRAM: %s\n' % tram_file['PATH'])
                         path_to_fibreflat = os.path.join(
                             self.obs_run_path, night, ccd, grating,
                             'fibreflat', tram_file['PATH'])
+                        if self.reject_saturated_image(path_to_fibreflat):
+                            logging.info('· [{}] [{}] [{}]'.format(night, ccd,
+                                                                   grating)
+                                         + ' TRAM: SATURATED! SKIPPING REDUCTION. \n')
+                            continue
                         # CALL TO AAORUN
                         aaorun_command('make_tlm', path_to_fibreflat,
                                        idx_file=self.fibreflat_idx_file,
                                        output=path_to_fibreflat.replace(
                                            '.fits', '_log.txt'),
-                                       log=True)
+                                       log=True,
+                                       timeout=timeout)
                         bad_tlm = QC.check_tramline(path_to_fibreflat.replace('.fits', 'tlm.fits'))
                         if not bad_tlm:
                             exptimes.append(float(tram_file['EXPTIME']))
@@ -310,8 +350,8 @@ class ReduceObsRun(object):
                         with open(recommended, 'w') as f:
                             f.write(best_fibreflat)
                     else:
-                        # TODO
-                        pass
+                        logging.warning('· [{}] [{}] [{}]'.format(night, ccd, grating)
+                                        + ' NO TRAMLINE AVAILABLE. \n')
 
     def get_master_tlm(self):
         """blah."""
@@ -339,10 +379,11 @@ class ReduceObsRun(object):
                         else:
                             verbose.missing_master(path_to_tram)
 
-    def reduce_arcs(self):
+    def reduce_arcs(self, timeout=900):
         """blah."""
         verbose.log_header('Reducing calibration arcs')
-        assert self.arc_idx_file is not None, verbose.missing_idx('arcs_idx')
+        if self.arc_idx_file is None:
+            verbose.missing_idx('arcs_idx')
         self.master_arcs = {}
         self.check_masters(names=['darks', 'lflats', 'tlm'])
         for night in self.nights:
@@ -355,7 +396,7 @@ class ReduceObsRun(object):
                     names = []
                     arcnames = []
                     for name, arc_file in self.obs_run_info[night][ccd][
-                        grating]['arcs'].items():
+                            grating]['arcs'].items():
                         arc_name = arc_file['ARCNAME']
                         arc_exptime = arc_file['EXPTIME']
                         logging.info('· [{}] [{}] [{}] [{}] [{}]'.format(
@@ -364,6 +405,11 @@ class ReduceObsRun(object):
                         path_to_arc = os.path.join(
                             self.obs_run_path, night, ccd, grating, 'arcs',
                             arc_file['PATH'])
+                        if self.reject_saturated_image(path_to_arc):
+                            logging.info('· [{}] [{}] [{}]'.format(night, ccd,
+                                                                   grating)
+                                         + ' ARC SATURATED! SKIPPING REDUCTION. \n')
+                            continue
                         # CALL TO AAORUN
                         command_success = aaorun_command(
                             'reduce_arc', path_to_arc,
@@ -373,7 +419,8 @@ class ReduceObsRun(object):
                                 '-TLMAP_FILENAME {}'.format(
                                     self.master_tlm[night][ccd][grating])],
                             output=path_to_arc.replace('.fits', '_log.txt'),
-                            log=True
+                            log=True,
+                            timeout=timeout
                         )
                         if command_success == 0:
                             QC.check_image(path_to_arc.replace('.fits', 'red.fits'),
@@ -434,12 +481,14 @@ class ReduceObsRun(object):
                         else:
                             verbose.missing_master(path_to_arc)
 
-    def reduce_fflats(self):
+    def reduce_fflats(self, timeout=900):
         """blah."""
         verbose.log_header('Reducing FIBRE FLATS')
-        assert self.fibreflat_idx_file is not None, verbose.missing_idx('fflat_idx')
+        if self.fibreflat_idx_file is None:
+            verbose.missing_idx('fflat_idx')
         self.check_masters(names=['darks', 'lflats', 'tlm', 'arcs'])
         self.master_fibreflats = self.master_tlm.copy()
+        # TODO: This should only reduce the master fflat.
         for night in self.nights:
             for ccd in self.ccds:
                 gratings = self.obs_run_info[night][ccd].keys()
@@ -453,6 +502,11 @@ class ReduceObsRun(object):
                         path_to_fflat = os.path.join(self.obs_run_path, night,
                                                      ccd, grating, 'fibreflat',
                                                      object_file['PATH'])
+                        if self.reject_saturated_image(path_to_fflat):
+                            logging.info('· [{}] [{}] [{}]'.format(night, ccd,
+                                                                   grating)
+                                         + ' FFLAT SATURATED! SKIPPING REDUCTION. \n')
+                            continue
                         # CALL TO AAORUN
                         command_success = aaorun_command(
                             'reduce_fflat', path_to_fflat,
@@ -465,7 +519,8 @@ class ReduceObsRun(object):
                                 '-WAVEL_FILENAME {}'.format(
                                     self.master_arcs[night][ccd][grating])],
                             output=path_to_fflat.replace('.fits', '_log.txt'),
-                            log=True
+                            log=True,
+                            timeout=timeout
                         )
                         if command_success == 0:
                             QC.check_image(path_to_fflat.replace('.fits', 'red.fits'),
@@ -503,10 +558,11 @@ class ReduceObsRun(object):
                         else:
                             verbose.missing_master(path_to_fflat)
 
-    def reduce_object(self):
+    def reduce_object(self, timeout=900):
         """blah."""
         verbose.log_header('Reducing science objects')
-        assert self.object_idx_file is not None, verbose.missing_idx('object_idx')
+        if self.object_idx_file is None:
+            verbose.missing_idx('object_idx')
         self.check_masters(names=['darks', 'lflats', 'tlm', 'arcs', 'fflats'])
         for night in self.nights:
             for ccd in self.ccds:
@@ -524,6 +580,11 @@ class ReduceObsRun(object):
                         path_to_obj = os.path.join(
                             self.obs_run_path, night, ccd, grating, 'sci',
                             object_file['PATH'])
+                        if self.reject_saturated_image(path_to_obj):
+                            logging.info('· [{}] [{}] [{}]'.format(night, ccd,
+                                                                   grating)
+                                         + ' OBJECT SATURATED! SKIPPING REDUCTION. \n')
+                            continue
                         # CALL TO AAORUN
                         command_success = aaorun_command(
                             'reduce_object', path_to_obj,
@@ -539,7 +600,8 @@ class ReduceObsRun(object):
                                 '-WAVEL_FILENAME {}'.format(
                                     self.master_arcs[night][ccd][grating])],
                             output=path_to_obj.replace('.fits', '_log.txt'),
-                            log=True
+                            log=True,
+                            timeout=timeout
                         )
                         if command_success == 0:
                             QC.check_image(path_to_obj.replace('.fits', 'red.fits'),
@@ -549,38 +611,5 @@ class ReduceObsRun(object):
     def combine_science_flats(self):
         """Combine all dome/sky flats into a master file for each night."""
         pass
-
-
-if __name__ == '__main__':
-    import time
-    tstart = time.time()
-    obsrunpath = '/home/pablo/Research/obs_data/HI-KIDS/raw/mar2022_obsruns/obs_run_0'
-    redOR = ReduceObsRun(
-        obs_run_path=obsrunpath,
-        ccds=['ccd_1', 'ccd_2'],
-        dark_idx='koala_dark.idx',
-        fibreflat_idx='koala_dark.idx',
-        lflat_idx='koala_dark.idx',
-        arcs_idx='koala_arcs.idx',
-        object_idx='koala_reduce.idx')
-
-    # redOR.reduce_darks()
-    redOR.reduce_lflats()
-
-    #
-
-    # redOR.get_master_darks()
-    # redOR.get_master_lflats()
-    # redOR.get_master_tlm()
-    # redOR.get_arcs()
-    # redOR.get_fibreflats()
-    # redOR.extract_tramlines()
-
-    # redOR.reduce_arcs()
-    # redOR.reduce_fflats()
-    #redOR.reduce_object()
-
-    tend = time.time()
-    print('\n\n ### Elapsed time (hrs): ', (tend - tstart) / 3600)
 
 # Mr Krtxo \(ﾟ▽ﾟ)/
