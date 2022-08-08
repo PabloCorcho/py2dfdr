@@ -349,7 +349,7 @@ def aaorun_cleanup(log=False):
     """blah..."""
     process = subprocess.run('cleanup', shell=True, timeout=60, stdout=subprocess.PIPE, text=True)
     if log:
-        logging.info('· [aaorun] Cleaning')
+        logging.info('[aaorun] Cleaning')
 
 
 def aaorun_command(command, file, options=None, output=None,

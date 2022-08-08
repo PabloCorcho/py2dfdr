@@ -337,13 +337,16 @@ class ReduceObsRun(object):
                                          + ' TRAM: SATURATED! SKIPPING REDUCTION.')
                             continue
                         # CALL TO AAORUN
-                        aaorun_command('make_tlm', path_to_fibreflat,
-                                       idx_file=self.fibreflat_idx_file,
-                                       output=path_to_fibreflat.replace(
-                                           '.fits', '_log.txt'),
-                                       log=True,
-                                       timeout=timeout)
-                        bad_tlm = QC.check_tramline(path_to_fibreflat.replace('.fits', 'tlm.fits'))
+                        command_success = aaorun_command('make_tlm', path_to_fibreflat,
+                                                         idx_file=self.fibreflat_idx_file,
+                                                         output=path_to_fibreflat.replace(
+                                                         '.fits', '_log.txt'),
+                                                         log=True,
+                                                         timeout=timeout)
+                        if command_success == 0:
+                            bad_tlm = QC.check_tramline(path_to_fibreflat.replace('.fits', 'tlm.fits'))
+                        else:
+                            bad_tlm = True
                         if not bad_tlm:
                             exptimes.append(float(tram_file['EXPTIME']))
                             names.append(name)
