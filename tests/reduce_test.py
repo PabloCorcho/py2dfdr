@@ -31,7 +31,7 @@ redOR = red_obs.ReduceObsRun(
 # redOR.reduce_fflats(timeout=300)
 # redOR.get_fibreflats()
 
-# redOR.reduce_object(timeout=900)
+redOR.reduce_object(timeout=900)
 
 
 

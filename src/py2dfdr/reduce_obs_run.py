@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr  8 15:50:34 2022
+This module contains...
 
-@author: pablo
+Log of (some) changes
+08-08-22:
+
 """
 
 import yaml
@@ -20,30 +22,112 @@ from . import verbose
 class ReduceObsRun(object):
     """Reduce KOALA observing runs.
 
+    Description
+    -----------
+    This class provides performs all the necessary reduction steps and quality control checks to reduce an observing run
+    from KOALA data.
+
     Attributes
     ----------
-    - obs_run_info
-    - obs_run_flags
-    - obs_run_path
-    - nights
-    - master_bias
-    - master_darks
-    - master_lflats
-    - master_tlm
-    - master_arcs
-    - master_fibreflats
+    - obs_run_info: (dict) Description of the contents within the OR. When providing the path to a given OR, the
+    obs_run_info.yml must be on the root path.
+    - obs_run_path: (str) Path to the root of the OR.
+    - ccds: (list) List of CCDs detectors to reduce (e.g. "[ccd_1, ccd_2]")
+    - dark_idx_file: (str) Name of the .idx file used to reduce dark files.
+    - lflat_idx_file: (str) Name of the .idx file used to reduce long-slit flat files.
+    - fibreflat_idx_file: (str) Name of the .idx file used to reduce fibre flat files (including tramline mapping).
+    - dark_idx_file: (str) Name of the .idx file used to reduce dark files.
+    - nights: (list) List containing all the observing nights within the OR.
+    - master_bias: (dict) Dictionary containing the information of master bias.
+    - master_darks: (dict) Dictionary containing the information of master darks (one for each exp. time).
+    - master_lflats: (dict) Dictionary containing the information of master long-slit flats (
+    one for each exp. time and grating).
+    - master_tlm: (dict) Dictionary containing the information of tramline maps (one for each night, ccd and grating)
+    - master_arcs: (dict) Dictionary containing the information of arc lamps file (one for each night, ccd and grating)
+    - master_fibreflats: (dict) Dictionary containing the information of fibreflats (one for each night, ccd and
+    grating)
     - sat_fraction: (float, default=0.3) Maximum fraction of saturated pixels for preforming the reduction. Files with
     values above this limit will be flagged as "SATURATED" and no reduction will be performed.
     - sat_level: (float, default=65500.0) Number of counts for saturated pixels.
     - reject_names: (str list, default=['FOCUS']) List containing names/keywords of files to reject during data
     reduction based on the fits header.
     - verb: (bool, default=True) Whether to print reduction steps or only saving them on the log file.
+
+    Methods
+    -------
+    - load_obs_run
+    - check_masters
+    - reject_saturated
+    - reject_from_name
+    - reduce_bias
+    - get_master_bias
+    - reduce_darks
+    - get_master_darks
+    - reduce_lflats
+    - get_master_lflats
+    - extract_tramlines
+    - get_master_tlm
+    - reduce_arcs
+    - get_master_arcs
+    - reduce_fflats
+    - get_master_fflats
+    - reduce_object
+    - combine_science_data
+
+    Example
+    -------
+    tstart = time.time()
+    # Path to the observing run
+    obsrunpath = '/home/pablo/Research/obs_data/HI-KIDS/raw/mar2022_obsruns/obs_run_0'
+    # Instantiate the ReduceObsRun object
+    redOR = red_obs.ReduceObsRun(obs_run_path=obsrunpath, ccds=['ccd_1', 'ccd_2'],
+                                 dark_idx='koala_dark.idx',
+                                 lflat_idx='koala_dark.idx',
+                                 fibreflat_idx='koala_fflat.idx',
+                                 arcs_idx='koala_arcs.idx',
+                                 object_idx='koala_reduce.idx',
+                                 # Values above or equal to 65500 will be considered saturated pixels
+                                 sat_level=65500.0,
+                                 # When the fraction of saturated pixels is >= sat_fraction the file is not reduced
+                                 sat_fraction=0.5)
+    # Start the reduction sequence
+    redOR.reduce_darks(timeout=300)  # If the aaorun command takes more than "timeout", the process is skipped.
+    # redOR.get_master_darks()
+    redOR.reduce_lflats(timeout=300)
+    # redOR.get_master_lflats()
+    redOR.extract_tramlines(timeout=300)
+    # redOR.get_master_tlm()
+    # redOR.reduce_arcs(timeout=300)
+    # redOR.get_arcs()
+    # redOR.reduce_fflats(timeout=300)
+    # redOR.get_fibreflats()
+    redOR.reduce_object(timeout=900)
+    tend = time.time()
+    print('\n\n ### Elapsed time (hrs): ', (tend - tstart) / 3600)
+    # Good luck ;)
+    # Mr Krtxo \(ﾟ▽ﾟ)/
     """
 
     def __init__(self, obs_run_path, verb=True, **kwargs):
-        """..."""
+        """
+        Observing Run Reduction constructor
+
+        Input params
+        ------------
+        - obs_run_path: (str) Path to OR directory
+        - verb: (bool, optional, default=True) If True, all the process output will be printed as recorded on the Log
+        file.
+        - kwargs:
+            - sat_frac
+            - sat_level
+            - reject_names
+            - dark_idx
+            - lflat_idx
+            - fibreflat_idx
+            - arcs_idx
+            - object_idx
+        """
         self.obs_run_info = None
-        self.obs_run_flags = None
         self.nights = None
         self.master_bias = None
         self.master_darks = None
@@ -140,7 +224,6 @@ class ReduceObsRun(object):
         for rej_name in self.reject_names:
             if name.find(rej_name) >= 0:
                 return True
-                break
         return False
 
     # REDUCTION METHODS ------------------------------------------------------------------------------------------------
@@ -641,13 +724,15 @@ class ReduceObsRun(object):
                             object_flags[name]['FLAG'] = 'OK'
                             QC.check_image(path_to_obj.replace('.fits', 'red.fits'),
                                            save_dir=os.path.join(os.path.dirname(path_to_obj),
-                                                                 '{}.png'.format(name)))
+                                                                 '{}.png'.format(name)),
+                                           title=obj_name)
                         else:
                             object_flags[name]['FLAG'] = 'AAORUNFAIL'
                             logging.warning('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
                                                                                grating)
                                             + 'WARNING: Unsuccessful reduction')
-                    with open(os.path.join(os.path.dirname(path_to_obj), 'REDUCTION_FLAGS.yml'), 'w') as outfile:
+                    with open(os.path.join(self.obs_run_path, night, ccd, grating, 'sci',
+                                           'REDUCTION_FLAGS.yml'), 'w') as outfile:
                         yaml.dump(object_flags, outfile, default_flow_style=False)
 
     # Extra functions
