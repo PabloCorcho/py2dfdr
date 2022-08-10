@@ -58,6 +58,16 @@ def check_saturated(path, sat_level=65500, log=True):
     return frac_sat
 
 
+def get_keyword(path, keyword, hdu_index=0):
+    """Return the keyword value of a fits file."""
+    with fits.open(path) as f:
+        try:
+            val = f[hdu_index].header[keyword]
+        except Exception:
+            val = None
+    return val
+
+
 def check_tramline(path, plot=True):
     """blah."""
     logging.info('[QC] · Test for Tramline:\n   {}'.format(path))

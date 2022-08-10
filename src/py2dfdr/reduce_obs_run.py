@@ -212,7 +212,7 @@ class ReduceObsRun(object):
 
     # REJECTION METHODS ------------------------------------------------------------------------------------------------
     def reject_saturated_image(self, path):
-        """Reject object based on fraction of saturated pixels"""
+        """Reject object based on fraction of saturated pixels."""
         sat_frac = QC.check_saturated(path, sat_level=self.sat_level, log=True)
         if sat_frac >= self.sat_fraction:
             return True
@@ -220,11 +220,23 @@ class ReduceObsRun(object):
             return False
 
     def reject_from_name(self, name):
-        """Reject object based on header name"""
+        """Reject object based on header name."""
         for rej_name in self.reject_names:
             if name.find(rej_name) >= 0:
                 return True
         return False
+
+    @staticmethod
+    def reject_binned(path):
+        """Reject data on binning mode."""
+        val = QC.get_keyword(path, keyword='WINDOW', hdu_index=0)
+        if val is not None:
+            if val.find('BIN') >= 0:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     # REDUCTION METHODS ------------------------------------------------------------------------------------------------
     def reduce_bias(self):
@@ -696,6 +708,11 @@ class ReduceObsRun(object):
                                                                             grating)
                                          + ' OBJECT NAME-REJECTED! SKIPPING REDUCTION.')
                             continue
+                        if self.reject_binned(path_to_obj):
+                            object_flags[name]['FLAG'] = 'BINNING_CONFIG'
+                            logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
+                                                                            grating)
+                                         + ' OBJECT IN BINNING CONFIGURATION. SKIPPING REDUCTION.')
                         if self.reject_saturated_image(path_to_obj):
                             object_flags[name]['FLAG'] = 'SATURATED'
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
