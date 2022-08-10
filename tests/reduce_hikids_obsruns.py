@@ -21,17 +21,17 @@ redOR = red_obs.ReduceObsRun(
 # redOR.reduce_lflats(timeout=300)
 # redOR.get_master_lflats()
 
-redOR.extract_tramlines(timeout=300)
+# redOR.extract_tramlines(timeout=300)
 # redOR.get_master_tlm()
 
-redOR.reduce_arcs(timeout=600)
+# redOR.reduce_arcs(timeout=600)
 # redOR.get_arcs()
 
 # TODO: This should only reduce the master fibre flats selected during tramline extraction
-redOR.reduce_fflats(timeout=600)
-redOR.get_fibreflats()
+# redOR.reduce_fflats(timeout=600)
+# redOR.get_fibreflats()
 
-# redOR.reduce_object(timeout=900)
+redOR.reduce_object(timeout=900)
 
 
 

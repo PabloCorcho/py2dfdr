@@ -16,7 +16,7 @@ def missing_yml(file_name):
 
 def missing_master(file_name):
     logging.error(
-        '--> [ERROR] MASTERDARK *NOT* found at:\n  {}'.format(
+        '--> [ERROR] MASTER FILE *NOT* found at:\n  {}'.format(
             file_name))
     raise NoMasterFileError(file_name)
 

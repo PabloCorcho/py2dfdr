@@ -467,7 +467,7 @@ class ReduceObsRun(object):
                             names[best]]['PATH'].replace('.fits', 'red.fits'))
                     logging.info(
                         '[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd, grating)
-                        + ' BEST RECOMMENDED TRAM:\n  %s' % best_arc)
+                        + ' BEST RECOMMENDED ARC:\n  %s' % best_arc)
                     self.master_arcs[night][ccd][grating] = best_arc
                     recommended = os.path.join(
                         os.path.dirname(best_arc), 'RECOMMENDED_ARC')
@@ -597,6 +597,7 @@ class ReduceObsRun(object):
                             grating]['sci'].items():
                         obj_name = object_file['NAME']
                         exptime = object_file['EXPTIME']
+                        object_flags[name] = {}
                         object_flags[name]['NAME'] = obj_name
                         object_flags[name]['PATH'] = object_file['PATH']
                         logging.info('\n[OBSRUN] · [{}] [{}] [{}] [{}] [{}]'.format(
