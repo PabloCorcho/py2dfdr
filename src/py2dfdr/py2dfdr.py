@@ -7,9 +7,7 @@ import os
 import subprocess
 import logging
 
-# =============================================================================
-# 2dfdr aaorun wrapper
-# =============================================================================
+
 def aaorun_cleanup(log=False):
     """Clean temporary files that may impact on 2dfdr performance
     
@@ -35,6 +33,11 @@ def aaorun_command(command, file, options=None, output=None,
 
     Link to 2dfdr repo:
     https://dev.aao.org.au/rds/2dfdr
+
+    To see the commands available for aaorun, type
+    "aaorun help" on the terminal.
+    For examples, type 
+    "aaorun examples"
 
     Params
     ------
