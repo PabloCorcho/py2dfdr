@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 This module contains...
 
@@ -10,13 +8,13 @@ Log of (some) changes
 
 import yaml
 import os
-from .py2dfdr import aaorun_command
-from . import reduction_QC as QC
-from . import koala_cheatsheet as kcs
+from py2dfdr.py2dfdr import aaorun_command
+from py2dfdr import reduction_QC as QC
+from py2dfdr import koala_cheatsheet as kcs
 import numpy as np
 import logging
 import datetime
-from . import verbose
+from py2dfdr import verbose
 
 
 class ReduceObsRun(object):
