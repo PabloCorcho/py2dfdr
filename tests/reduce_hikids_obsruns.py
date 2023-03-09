@@ -2,7 +2,7 @@ from py2dfdr import reduce_obs_run as red_obs
 
 import time
 tstart = time.time()
-obsrunpath = '/Users/pcorcho/obs_data/KOALA/obsruns/obs_run_0'
+obsrunpath = '/Users/pcorcho/obs_data/KOALA/obsruns/obs_run_75'
 redOR = red_obs.ReduceObsRun(
         obs_run_path=obsrunpath,
         ccds=[
@@ -27,16 +27,11 @@ redOR = red_obs.ReduceObsRun(
 # redOR.reduce_arcs(timeout=600)
 # redOR.get_arcs()
 
-# TODO: This should only reduce the master fibre flats selected during tramline extraction
+# TODO: This should only reduce the master fibre flats selected during tramline extraction#
 # redOR.reduce_fflats(timeout=600)
 # redOR.get_fibreflats()
 
 redOR.reduce_object(timeout=900)
-
-
-
-
-
 
 
 tend = time.time()

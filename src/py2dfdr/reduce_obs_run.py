@@ -300,13 +300,16 @@ class ReduceObsRun(object):
             for exptime in self.obs_run_info['darks'][ccd].keys():
                 self.master_darks[ccd][exptime] = {
                     os.path.join(self.obs_run_path, 'darks', 'ccd_1',
-                                 exptime, 'DARKcombined_1800.0.fits')}
+                                 exptime, 'DARKcombined_{}.fits'.format(exptime))}
 
-    def get_master_darks(self, exptime='1800.0'):
+    def get_master_darks(self, exptime=None):
         """blah."""
         self.master_darks = {}
         verbose.log_header('[OBSRUN] · Searching master dark files')
         for ccd in self.ccds:
+            if exptime is None:
+                best_dark = np.argmax(np.array(list(self.obs_run_info['darks'][ccd].keys()), dtype=np.float))
+                exptime = list(self.obs_run_info['darks'][ccd].keys())[best_dark]
             path_to_master = os.path.join(
                 self.obs_run_path, 'darks', ccd, exptime,
                 'DARKcombined_{}.fits'.format(exptime))
@@ -346,11 +349,19 @@ class ReduceObsRun(object):
                                    timeout=timeout)
                     self.master_lflats[ccd][grating][fflat_exptime].append(
                         path_to_fflat.replace('.fits', 'red.fits'))
-                for exptime in self.master_lflats[ccd][grating].keys():
+
+                exposure_times = list(self.master_lflats[ccd][grating].keys())
+                for exptime in exposure_times:
                     verbose.log_header('[OBSRUN] Computing MASTERLFLAT [{}] [{}] [{}]\n'.format(
                         ccd, grating, exptime))
-                    fflats_to_combine = ' '.join(
-                        self.master_lflats[ccd][grating][exptime])
+                    if len(self.master_lflats[ccd][grating][exptime]) > 1:
+                        fflats_to_combine = ' '.join(
+                            self.master_lflats[ccd][grating][exptime])
+                    else:
+                        del self.master_lflats[ccd][grating][exptime]
+                        logging.warning(
+                            '[OBSRUN] Only one file available! Skipping combination')
+                        continue
                     masterfflat_name = os.path.join(
                         self.obs_run_path, 'fflats', ccd, grating,
                         'LFLATcombined_{}_{}.fits'.format(grating, exptime))
@@ -369,10 +380,15 @@ class ReduceObsRun(object):
                     QC.check_image(masterfflat_name, save_dir=os.path.join(
                         self.obs_run_path, 'fflats', ccd, grating,
                         'masterlflat_{}.png'.format(exptime)))
+                # Best exposure time
+                logging.info('\n[OBSRUN] ·[{}] [{}] LFLAT: Selecting best master LFLAT'.format(
+                    ccd, grating))
                 recommended_exp_time = kcs.lflat_time[ccd][grating.split('_')[0]]
                 time_keys = list(self.master_lflats[ccd][grating].keys())
                 times = np.array(time_keys, dtype=float)
                 best = np.argmin(np.abs(times - recommended_exp_time))
+                logging.info('\n[OBSRUN] ·[{}] [{}] LFLAT: Recommended exp. time {} \n Best available: {}, {}'.format(
+                    ccd, grating, recommended_exp_time, times[best], self.master_lflats[ccd][grating][time_keys[best]]))
                 self.master_lflats[ccd][grating] = self.master_lflats[ccd][grating][
                     time_keys[best]]
                 recommended = os.path.join(
@@ -553,21 +569,26 @@ class ReduceObsRun(object):
                     )
                     exptimes = np.array(exptimes, dtype=float)
                     exptimes[~selected_arcs] = np.nan
-                    best = np.nanargmin(
-                        np.abs(exptimes[selected_arcs] - rec_exptime))
-                    best_arc = os.path.join(
-                        self.obs_run_path, night, ccd,
-                        grating, 'arcs',
-                        self.obs_run_info[night][ccd][grating]['arcs'][
-                            names[best]]['PATH'].replace('.fits', 'red.fits'))
-                    logging.info(
-                        '[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd, grating)
-                        + ' BEST RECOMMENDED ARC:\n  %s' % best_arc)
-                    self.master_arcs[night][ccd][grating] = best_arc
-                    recommended = os.path.join(
-                        os.path.dirname(best_arc), 'RECOMMENDED_ARC')
-                    with open(recommended, 'w') as f:
-                        f.write(best_arc)
+                    if selected_arcs.any():
+                        best = np.nanargmin(
+                            np.abs(exptimes[selected_arcs] - rec_exptime))
+                        best_arc = os.path.join(
+                            self.obs_run_path, night, ccd,
+                            grating, 'arcs',
+                            self.obs_run_info[night][ccd][grating]['arcs'][
+                                names[best]]['PATH'].replace('.fits', 'red.fits'))
+                        logging.info(
+                            '[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd, grating)
+                            + ' BEST RECOMMENDED ARC:\n  %s' % best_arc)
+                        self.master_arcs[night][ccd][grating] = best_arc
+                        recommended = os.path.join(
+                            os.path.dirname(best_arc), 'RECOMMENDED_ARC')
+                        with open(recommended, 'w') as f:
+                            f.write(best_arc)
+                    else:
+                        logging.warning(
+                            '[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd, grating)
+                            + ' WARNING: NO ARC SELECTED!')
 
     def get_master_arcs(self):
         """blah."""
@@ -713,6 +734,7 @@ class ReduceObsRun(object):
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
                                                                             grating)
                                          + ' OBJECT IN BINNING CONFIGURATION. SKIPPING REDUCTION.')
+                            continue
                         if self.reject_saturated_image(path_to_obj):
                             object_flags[name]['FLAG'] = 'SATURATED'
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
