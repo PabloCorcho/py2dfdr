@@ -303,12 +303,6 @@ class ReduceObsRun(object):
         self.master_darks = {}
         for ccd in self.ccds:
             self.master_darks[ccd] = {}
-<<<<<<< HEAD
-            for exptime in self.obs_run_info['darks'][ccd].keys():
-                self.master_darks[ccd][exptime] = {
-                    os.path.join(self.obs_run_path, 'darks', 'ccd_1',
-                                 exptime, 'DARKcombined_{}.fits'.format(exptime))}
-=======
             # Check which exposure time use
             exptimes = list(self.obs_run_info['darks'][ccd].keys())
             bestexp = np.argmin(
@@ -317,21 +311,12 @@ class ReduceObsRun(object):
             self.master_darks[ccd] = {
                     os.path.join(self.obs_run_path, 'darks',
                     ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)}
->>>>>>> b837d1bc4956b28260f1b49a052258ee3489d25a
 
     def get_master_darks(self, exptime=None):
         """blah."""
         self.master_darks = {}
         verbose.log_header('[OBSRUN] · Searching master dark files')
         for ccd in self.ccds:
-<<<<<<< HEAD
-            if exptime is None:
-                best_dark = np.argmax(np.array(list(self.obs_run_info['darks'][ccd].keys()), dtype=np.float))
-                exptime = list(self.obs_run_info['darks'][ccd].keys())[best_dark]
-            path_to_master = os.path.join(
-                self.obs_run_path, 'darks', ccd, exptime,
-                'DARKcombined_{}.fits'.format(exptime))
-=======
             # Check the available exposure times
             exptimes = list(self.obs_run_info['darks'][ccd].keys())
             bestexp = np.argmin(
@@ -339,7 +324,6 @@ class ReduceObsRun(object):
             optimal_exptime = exptimes[bestexp]
             path_to_master = os.path.join(self.obs_run_path, 'darks',
                     ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)
->>>>>>> b837d1bc4956b28260f1b49a052258ee3489d25a
             if os.path.isfile(path_to_master):
                 logging.info('[OBSRUN] [{}] MASTERDARK found at {}'.format(
                     ccd, path_to_master))
