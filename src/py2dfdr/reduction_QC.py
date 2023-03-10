@@ -1,16 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr  8 08:39:39 2022
-
-@author: pablo
-"""
-
+import os
 import numpy as np
 from astropy.io import fits
 from matplotlib import pyplot as plt
 import logging
 
+def check_exists(path):
+    """Check if a file exists.
+    Params
+    ------
+    path: (str) Path to file or directory
+    
+    Returns
+    -------
+    exists: (bool)
+    """
+    return os.path.exists(path)
 
 def check_image(path, percentiles=None, save_dir=None, title=None):
     """blah."""

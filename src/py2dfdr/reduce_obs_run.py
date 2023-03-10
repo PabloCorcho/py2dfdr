@@ -1,11 +1,3 @@
-"""
-This module contains...
-
-Log of (some) changes
-08-08-22:
-
-"""
-
 import yaml
 import os
 from py2dfdr.py2dfdr import aaorun_command
@@ -133,27 +125,14 @@ class ReduceObsRun(object):
         self.master_tlm = None
         self.master_arcs = None
         self.master_fibreflats = None
-
-        # Data rejection
-        self.sat_fraction = kwargs.get('sat_frac', 0.3)
-        self.sat_level = kwargs.get('sat_level', 65500.)
-        self.reject_names = kwargs.get('reject_names', ['FOCUS'])
-
+        # Root path
         self.obs_run_path = obs_run_path
         # Initialise logging file
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s: %(message)s',
-            datefmt='%m/%d/%Y %I:%M:%S %p',
-            filename=os.path.join(self.obs_run_path, 'OR_reduction.log'),
-            # handlers=[
-            #    logging.FileHandler("OR_reduction.log"),
-            #    logging.StreamHandler()],
-            level=logging.INFO)
-        if verb:
-            logging.getLogger().addHandler(logging.StreamHandler())
-        verbose.log_header('[OBSRUN] Initialising OR reduction process at:\n   {} \n'.format(
-            self.obs_run_path))
-        logging.info(datetime.datetime.now().strftime("%c"))
+        self.initialise_logger(verb=verb)
+        # Data rejection
+        self.sat_level = kwargs.get('sat_level', 65500.)
+        self.sat_fraction = kwargs.get('sat_frac', 0.3)
+        self.reject_names = kwargs.get('reject_names', ['FOCUS'])
         # CCD detector to reduce
         self.ccds = kwargs.get('ccds', None)
         if self.ccds is None:
@@ -176,6 +155,22 @@ class ReduceObsRun(object):
 
         # Load yml file containing data description
         self.load_obs_run_yml(**kwargs)
+
+    def initialise_logger(self, verb):
+        """Initialise logger """
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s: %(message)s',
+            datefmt='%m/%d/%Y %I:%M:%S %p',
+            filename=os.path.join(self.obs_run_path, 'OR_reduction.log'),
+            # handlers=[
+            #    logging.FileHandler("OR_reduction.log"),
+            #    logging.StreamHandler()],
+            level=logging.INFO)
+        if verb:
+            logging.getLogger().addHandler(logging.StreamHandler())
+        verbose.log_header('[OBSRUN] Initialising OR reduction process at:\n   {} \n'.format(
+            self.obs_run_path))
+        logging.info(datetime.datetime.now().strftime("%c"))
 
     def load_obs_run_yml(self, **kwargs):
         """Load the Observing Run yaml file."""
@@ -248,10 +243,17 @@ class ReduceObsRun(object):
         pass
 
     def reduce_darks(self, timeout=900):
-        """blah."""
+        """Reduce all the dark frames available within the observation run.
+        
+        Params
+        ------
+        timeout: (int, optional, default=900) Time limit in seconds for aborting
+        a single reduction process.
+        """
         verbose.log_header('Reducing darks')
         if self.dark_idx_file is None:
             verbose.missing_idx('dark_idx')
+        # Iterate over all frames
         for ccd in self.ccds:
             for exptime in self.obs_run_info['darks'][ccd].keys():
                 all_darks = []
@@ -263,6 +265,10 @@ class ReduceObsRun(object):
                     path_to_dark = os.path.join(
                         self.obs_run_path, 'darks', ccd, exptime,
                         dark_file['PATH'])
+                    if not QC.check_exists(path_to_dark):
+                        logging.warning(
+                    '[OBSRUN] · File {} does not exist\n'.format(path_to_dark))
+                        continue
                     # CALL AAORUN
                     aaorun_command('reduce_dark', path_to_dark,
                                    idx_file=self.dark_idx_file,
@@ -338,6 +344,10 @@ class ReduceObsRun(object):
                     path_to_fflat = os.path.join(
                         self.obs_run_path, 'fflats', ccd, grating,
                         fflat_file['PATH'])
+                    if not QC.check_exists(path_to_fflat):
+                        logging.warning(
+                    '[OBSRUN] · File {} does not exist\n'.format(path_to_fflat))
+                        continue
                     # CALL TO AAORUN
                     aaorun_command('reduce_lflat', path_to_fflat,
                                    idx_file=self.lflat_idx_file,
@@ -440,6 +450,10 @@ class ReduceObsRun(object):
                         path_to_fibreflat = os.path.join(
                             self.obs_run_path, night, ccd, grating,
                             'fibreflat', tram_file['PATH'])
+                        if not QC.check_exists(path_to_fibreflat):
+                            logging.warning(
+                        '[OBSRUN] · File {} does not exist\n'.format(path_to_fibreflat))
+                            continue
                         if self.reject_saturated_image(path_to_fibreflat):
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
                                                                             grating)
@@ -533,6 +547,10 @@ class ReduceObsRun(object):
                         path_to_arc = os.path.join(
                             self.obs_run_path, night, ccd, grating, 'arcs',
                             arc_file['PATH'])
+                        if not QC.check_exists(path_to_arc):
+                            logging.warning(
+                        '[OBSRUN] · File {} does not exist\n'.format(path_to_arc))
+                            continue
                         if self.reject_saturated_image(path_to_arc):
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
                                                                             grating)
@@ -635,6 +653,10 @@ class ReduceObsRun(object):
                         path_to_fflat = os.path.join(self.obs_run_path, night,
                                                      ccd, grating, 'fibreflat',
                                                      object_file['PATH'])
+                        if not QC.check_exists(path_to_fflat):
+                            logging.warning(
+                        '[OBSRUN] · File {} does not exist\n'.format(path_to_fflat))
+                            continue
                         if self.reject_saturated_image(path_to_fflat):
                             logging.info('[OBSRUN] · [{}] [{}] [{}]'.format(night, ccd,
                                                                             grating)
@@ -720,6 +742,10 @@ class ReduceObsRun(object):
                         path_to_obj = os.path.join(
                             self.obs_run_path, night, ccd, grating, 'sci',
                             object_file['PATH'])
+                        if not QC.check_exists(path_to_obj):
+                            logging.warning(
+                        '[OBSRUN] · File {} does not exist\n'.format(path_to_obj))
+                            continue
                         # Data rejection
                         if self.reject_from_name(obj_name):
                             object_flags[name]['FLAG'] = 'NAMEREJ'
