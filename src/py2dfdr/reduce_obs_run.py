@@ -121,6 +121,7 @@ class ReduceObsRun(object):
         self.nights = None
         self.master_bias = None
         self.master_darks = None
+        self.master_dark_exptime = kwargs.get('master_dark_exptime', 1800)
         self.master_lflats = None
         self.master_tlm = None
         self.master_arcs = None
@@ -249,6 +250,7 @@ class ReduceObsRun(object):
         ------
         timeout: (int, optional, default=900) Time limit in seconds for aborting
         a single reduction process.
+        master_dark_exptime: TODO
         """
         verbose.log_header('Reducing darks')
         if self.dark_idx_file is None:
@@ -301,19 +303,27 @@ class ReduceObsRun(object):
         self.master_darks = {}
         for ccd in self.ccds:
             self.master_darks[ccd] = {}
-            for exptime in self.obs_run_info['darks'][ccd].keys():
-                self.master_darks[ccd][exptime] = {
-                    os.path.join(self.obs_run_path, 'darks', 'ccd_1',
-                                 exptime, 'DARKcombined_1800.0.fits')}
+            # Check which exposure time use
+            exptimes = list(self.obs_run_info['darks'][ccd].keys())
+            bestexp = np.argmin(
+                np.array(exptimes, dtype=float) - self.master_dark_exptime)
+            optimal_exptime = exptimes[bestexp]
+            self.master_darks[ccd] = {
+                    os.path.join(self.obs_run_path, 'darks',
+                    ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)}
 
     def get_master_darks(self, exptime='1800.0'):
         """blah."""
         self.master_darks = {}
         verbose.log_header('[OBSRUN] · Searching master dark files')
         for ccd in self.ccds:
-            path_to_master = os.path.join(
-                self.obs_run_path, 'darks', ccd, exptime,
-                'DARKcombined_{}.fits'.format(exptime))
+            # Check the available exposure times
+            exptimes = list(self.obs_run_info['darks'][ccd].keys())
+            bestexp = np.argmin(
+                np.array(exptimes, dtype=float) - self.master_dark_exptime)
+            optimal_exptime = exptimes[bestexp]
+            path_to_master = os.path.join(self.obs_run_path, 'darks',
+                    ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)
             if os.path.isfile(path_to_master):
                 logging.info('[OBSRUN] [{}] MASTERDARK found at {}'.format(
                     ccd, path_to_master))
