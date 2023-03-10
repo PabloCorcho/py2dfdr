@@ -139,7 +139,7 @@ class ArchiveObs(object):
             for file in range(len(content)):
                 data = content[file].split(' ')
                 file_number = data[0].split(files_prefix)[1].split('.fits')[0]
-                files[file_number] = {'PATH': data[0], 'DESC': data[1]}
+                files[file_number] = {'PATH': data[0], 'DESC': data[1], 'REDUCE': True}
                 if files[file_number]['DESC'] == 'BIAS':
                     continue
                 with fits.open(data[0]) as hdul:
