@@ -49,9 +49,9 @@ following scheme:
 In order to prepare the data, use the following methods:
 - Initialize the archive class
 ```commandline
-from py2dfdr import KOALA_archive
+from py2dfdr.archive import ArchiveObs
 
-archive = KOALA_archive(path_to_data)
+archive = ArchiveObs(path_to_data)
 ```
 - Find the nights available and fetch the information for each file.
 ```commandline
@@ -98,3 +98,9 @@ redOR.reduce_object()
 ```
 During the process, some quality control plots will be generated.
 If, for example, the observing run already contains the products after reducing all darks, it is possible to load them using 'get_master_dark'.
+
+
+## TODO
+
+- dependecy requirements
+- quality control checks on raw files producing reports before starting the reduction procedure.
