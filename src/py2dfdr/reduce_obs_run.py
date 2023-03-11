@@ -245,7 +245,7 @@ class ReduceObsRun(object):
 
     def reduce_darks(self, timeout=900):
         """Reduce all the dark frames available within the observation run.
-        
+
         Params
         ------
         timeout: (int, optional, default=900) Time limit in seconds for aborting
@@ -308,9 +308,9 @@ class ReduceObsRun(object):
             bestexp = np.argmin(
                 np.array(exptimes, dtype=float) - self.master_dark_exptime)
             optimal_exptime = exptimes[bestexp]
-            self.master_darks[ccd] = {
+            self.master_darks[ccd] = 
                     os.path.join(self.obs_run_path, 'darks',
-                    ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)}
+                    ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)
 
     def get_master_darks(self, exptime=None):
         """blah."""
