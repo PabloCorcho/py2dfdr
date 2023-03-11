@@ -308,8 +308,7 @@ class ReduceObsRun(object):
             bestexp = np.argmin(
                 np.array(exptimes, dtype=float) - self.master_dark_exptime)
             optimal_exptime = exptimes[bestexp]
-            self.master_darks[ccd] = 
-                    os.path.join(self.obs_run_path, 'darks',
+            self.master_darks[ccd] = os.path.join(self.obs_run_path, 'darks',
                     ccd, optimal_exptime, 'DARKcombined_%s.fits' % optimal_exptime)
 
     def get_master_darks(self, exptime=None):
