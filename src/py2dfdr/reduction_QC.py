@@ -4,6 +4,10 @@ from astropy.io import fits
 from matplotlib import pyplot as plt
 import logging
 
+flux_cmap = plt.get_cmap('magma').copy()
+flux_cmap.set_under('fuchsia')
+flux_cmap.set_over('red')
+
 def check_exists(path):
     """Check if a file exists.
     Params
@@ -23,26 +27,44 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
         percentiles = [1, 5, 16, 50, 84, 95, 99]
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
-    fig = plt.figure(figsize=(10, 5))
+    if not np.isfinite(percents).all():
+        logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
+    else:
+        return
+    fig = plt.figure(figsize=(10, 10))
     if title is not None:
         fig.suptitle(title)
     else:
         fig.suptitle(path)
-    ax = fig.add_subplot(121)
-    if not np.isfinite(percents).all():
-        logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
-    else:
-        ax.hist(master.flatten(), range=[percents[0], percents[-1]],
-                bins=master.flatten().size//1000, log=True, color='k')
-        ax.set_xlabel('counts')
-        ax.set_ylabel('# pixels')
-        for pcnt in percents:
-            ax.axvline(pcnt, ls='-', color='r')
-        ax = fig.add_subplot(122)
-        mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
-                             cmap='nipy_spectral', aspect='auto',
-                             origin='lower')
-        plt.colorbar(mappable, label='counts')
+    ####################################
+    ax = fig.add_subplot(221)
+    ax.set_title("Counts histogram")
+    ax.hist(master.flatten(), range=[percents[0], percents[-1]],
+            bins=master.flatten().size//1000, log=True, color='k')
+    ax.set_xlabel('counts')
+    ax.set_ylabel('# pixels')
+    for pcnt in percents:
+        ax.axvline(pcnt, ls='-', color='r')
+    ####################################
+    ax = fig.add_subplot(222)
+    ax.set_title("2D reduced file")
+    mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
+                            cmap=flux_cmap, aspect='auto',
+                            origin='lower')
+    plt.colorbar(mappable, label='counts')
+    ####################################
+    central_fibre = master.shape[0] // 2
+    ax = fig.add_subplot(223)
+    ax.set_title("Fiber {} spectra".format(central_fibre))
+    ax.plot(master[central_fibre], c='k')
+    ax.set_ylim(percents[0], percents[-1])
+    ####################################
+    central_column = master.shape[1] // 2
+    ax = fig.add_subplot(223)
+    ax.set_title("Column {} spectra".format(central_column))
+    ax.plot(master[:, central_column], c='k')
+    ax.set_ylim(percents[0], percents[-1])
+
     if save_dir is not None:
         fig.savefig(save_dir, bbox_inches='tight')
         logging.info('[QC] Plot saved as:\n {}'.format(save_dir))
