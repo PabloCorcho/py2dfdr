@@ -206,7 +206,7 @@ class ArchiveObs(object):
             bins = np.unique(binnumber)
             self.ori = np.arange(0, bins.size)
             mapping = dict(zip(bins, self.ori))
-            self.night_run_id = binnumber
+            self.night_ori = np.array([mapping[bin_] for bin_ in binnumber])
             self.nights_keys = np.array(list(self.nights.keys()))
             for i, night in enumerate(self.nights.keys()):
                 self.nights[night]['ori'] = mapping[binnumber[i]]
@@ -261,7 +261,7 @@ class ArchiveObs(object):
             self.observing_runs[obs_run]['fflats'] = {'ccd_1': {}, 'ccd_2': {}}
 
             obs_run_nights_id = (
-                self.nights_keys[np.where(self.night_run_id == obs_run)[0]])
+                self.nights_keys[np.where(self.night_ori == obs_run)[0]])
             for nightid in obs_run_nights_id:
                 # Night data
                 night = self.nights[nightid]
