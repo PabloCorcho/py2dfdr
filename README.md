@@ -4,10 +4,10 @@
 ## Create working data directory
 Before starting the data reduction, it is necessary to classify each file (e.g. dark, fflat, arcs, science) to later
 apply the corresponding *aaorun* commands.
-*KOALA_archive* class provides a tool for classifying multiple observing nights into observing runs according to the
+*ArchiveObs* class provides a tool for classifying multiple observing nights into observing runs according to the
 following scheme:
 
-    |obs_run_0               (Observing run)
+    |obs_run_0               (Observing run ID)
         |darks              (Dark files)
             |ccd1            
                 |exptime1
@@ -102,5 +102,5 @@ If, for example, the observing run already contains the products after reducing 
 
 ## TODO
 
-- dependecy requirements
 - quality control checks on raw files producing reports before starting the reduction procedure.
+- 
