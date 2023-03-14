@@ -27,10 +27,8 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
         percentiles = [1, 5, 16, 50, 84, 95, 99]
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
-    if not np.isfinite(percents).all():
+    if not np.isfinite(percents).any():
         logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
-    else:
-        return
     fig = plt.figure(figsize=(10, 10))
     if title is not None:
         fig.suptitle(title)

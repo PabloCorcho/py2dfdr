@@ -331,7 +331,11 @@ class ReduceObsRun(object):
                 verbose.missing_master(path_to_master)
 
     def reduce_lflats(self, timeout=900):
-        """blah."""
+        """Reduce the long-slit flats within an observing run.
+        Params
+        ------
+        timeout: (int, optional, default=900)
+        """
         verbose.log_header('Reducing long-slit (detector) flats')
         if self.lflat_idx_file is None:
             verbose.missing_idx('lflat_idx')
@@ -343,6 +347,7 @@ class ReduceObsRun(object):
                 self.master_lflats[ccd][grating] = {}
                 for name, fflat_file in self.obs_run_info['fflats'][ccd][grating].items():
                     fflat_exptime = fflat_file['EXPTIME']
+                    # Create a Master file for each different exposure time
                     if fflat_exptime not in self.master_lflats[ccd][grating].keys():
                         self.master_lflats[ccd][grating][fflat_exptime] = []
                     logging.info('\n[OBSRUN] ·[{}] [{}] LFLAT: {}'.format(
@@ -372,7 +377,8 @@ class ReduceObsRun(object):
                         fflats_to_combine = ' '.join(
                             self.master_lflats[ccd][grating][exptime])
                     else:
-                        del self.master_lflats[ccd][grating][exptime]
+                        # del self.master_lflats[ccd][grating][exptime]
+                        self.master_lflats[ccd][grating][exptime] = self.master_lflats[ccd][grating][exptime][0]
                         logging.warning(
                             '[OBSRUN] Only one file available! Skipping combination')
                         continue
