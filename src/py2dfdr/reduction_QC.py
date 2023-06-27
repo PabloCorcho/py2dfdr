@@ -31,6 +31,8 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
         logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
     fig = plt.figure(figsize=(10, 10))
     if title is not None:
+        if title == 'auto':
+            title = fits.getval(path, 'OBJECT')
         fig.suptitle(title)
     else:
         fig.suptitle(path)
@@ -41,15 +43,16 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
             bins=master.flatten().size//1000, log=True, color='k')
     ax.set_xlabel('counts')
     ax.set_ylabel('# pixels')
-    for pcnt in percents:
-        ax.axvline(pcnt, ls='-', color='r')
+    for pcnt, label in zip(percents, percentiles):
+        ax.axvline(pcnt, ls='-', label=label)
+    ax.legend(loc='center', bbox_to_anchor=(0.5, 1.2), ncol=3)
     ####################################
     ax = fig.add_subplot(222)
     ax.set_title("2D reduced file")
     mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
                             cmap=flux_cmap, aspect='auto',
                             origin='lower')
-    plt.colorbar(mappable, label='counts')
+    plt.colorbar(mappable, label='counts', extend='both')
     ####################################
     central_fibre = master.shape[0] // 2
     ax = fig.add_subplot(223)
@@ -58,7 +61,7 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
     ax.set_ylim(percents[0], percents[-1])
     ####################################
     central_column = master.shape[1] // 2
-    ax = fig.add_subplot(223)
+    ax = fig.add_subplot(224)
     ax.set_title("Column {} spectra".format(central_column))
     ax.plot(master[:, central_column], c='k')
     ax.set_ylim(percents[0], percents[-1])
