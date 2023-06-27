@@ -388,7 +388,7 @@ class ArchiveObs(object):
         if os.path.isdir(path):
             self.archive_print('PATH: ' +  path + ' already exists')
         else:
-            os.mkdir(path)
+            os.makedirs(path)
             self.archive_print('PATH: ' + path + ' created')
 
 
