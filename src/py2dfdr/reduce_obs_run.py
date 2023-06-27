@@ -132,7 +132,7 @@ class ReduceObsRun(object):
         self.initialise_logger(verb=verb)
         # Data rejection
         self.sat_level = kwargs.get('sat_level', 65500.)
-        self.sat_fraction = kwargs.get('sat_frac', 0.3)
+        self.sat_fraction = kwargs.get('sat_frac', 0.2)
         self.reject_names = kwargs.get('reject_names', ['FOCUS'])
         # CCD detector to reduce
         self.ccds = kwargs.get('ccds', None)
@@ -216,7 +216,7 @@ class ReduceObsRun(object):
     def reject_from_name(self, name):
         """Reject object based on header name."""
         for rej_name in self.reject_names:
-            if name.find(rej_name) >= 0:
+            if name.lower().find(rej_name.lower()) >= 0:
                 return True
         return False
 
@@ -524,7 +524,7 @@ class ReduceObsRun(object):
                         verbose.NoFileError(recommended_file)
                     else:
                         with open(recommended_file, 'r') as f:
-                            path_to_tram = f.readline()
+                            path_to_tram = f.readline().strip()
                         if os.path.isfile(path_to_tram):
                             logging.info(
                                 '[OBSRUN] [{}] [{}] [{}] Selected Tramline\n  {}'.format(
@@ -635,7 +635,7 @@ class ReduceObsRun(object):
                         verbose.NoFileError(recommended_file)
                     else:
                         with open(recommended_file, 'r') as f:
-                            path_to_arc = f.read().split('\n')[0]
+                            path_to_arc = f.read().strip().split('\n')[0]
                         if os.path.isfile(path_to_arc):
                             logging.info(
                                 '[OBSRUN] [{}] [{}] [{}] ARC found at\n  {}'.format(
@@ -718,7 +718,7 @@ class ReduceObsRun(object):
                         verbose.NoFileError(recommended_file)
                     else:
                         with open(recommended_file, 'r') as f:
-                            path_to_tram = f.readline()
+                            path_to_tram = f.readline().strip()
                         path_to_fflat = path_to_tram.replace(
                             'tlm.fits', 'red.fits')
                         if os.path.isfile(path_to_fflat):
