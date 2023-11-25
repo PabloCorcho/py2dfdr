@@ -1,11 +1,27 @@
 # py2dfdr
-2dfdr python wrapper
+2dfdr python wrapper for reducing AAT data.
 
-## Create working data directory
-Before starting the data reduction, it is necessary to classify each file (e.g. dark, fflat, arcs, science) to later
-apply the corresponding *aaorun* commands.
-*ArchiveObs* class provides a tool for classifying multiple observing nights into observing runs according to the
-following scheme:
+[Link to AAT webpage](https://aat.anu.edu.au/)
+[Link to 2dfdr webpage](https://aat.anu.edu.au/science/software/2dfdr)
+[2dfdr repository](https://dev.aao.org.au/rds/2dfdr)
+
+## Main scope of py2dfdr
+
+This package aims to facilitate the data reduction process using the software 2dfdr following an object-oriented scheme that easily allows the data reduction of large amounts of data. The original purpose of this package is to reduce [KOALA](https://aat.anu.edu.au/science/instruments/current/koala/overview) data as part of the [HI-KIDS]() galaxy survey. Thus, it might not be suitable for reducing data from other AAT instruments (i.e., 2df, HERMES, SAMI, Hector, etc...)
+
+Contact: (Pablo Corcho-Caballero) corchocaballeropablo@gmail.com / p.corcho.caballero@rug.nl
+
+## Create observing runs data directory
+Before starting the data reduction sequence, it is necessary to classify each file (e.g. dark, fflat, arcs, science) within every input observing night. This is done in py2dfdr by defining *observing_runs*, i.e., collections of nights that share a set of calibration files (namely, darks, bias and detector flats). 
+
+The *archive.ArchiveObs* module provides a tool for classifying multiple observing nights into observing runs. The *input directory* must contain a set of nigth directories, using the naming convention: YYYYMMDD:
+    |MySetOfNights
+        |20220101
+            ...FITS files...
+        |20220102
+            ...
+
+All consecutive nights will be grouped into observing runs that extend up to two weeks of observations. The data withing each observing run will be organized according to the following scheme:
 
     |obs_run_0               (Observing run ID)
         |darks              (Dark files)
@@ -45,6 +61,8 @@ following scheme:
         |night_n
     ...
     |obs_run_k
+
+See examples in /tutorials for further instructions.
 
 In order to prepare the data, use the following methods:
 - Initialize the archive class
@@ -99,8 +117,3 @@ redOR.reduce_object()
 During the process, some quality control plots will be generated.
 If, for example, the observing run already contains the products after reducing all darks, it is possible to load them using 'get_master_dark'.
 
-
-## TODO
-
-- quality control checks on raw files producing reports before starting the reduction procedure.
-- 
