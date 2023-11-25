@@ -1,8 +1,6 @@
 # py2dfdr
-2dfdr python wrapper for reducing AAT data.
+[2dfdr](https://aat.anu.edu.au/science/software/2dfdr) python wrapper for reducing [AAT](https://aat.anu.edu.au/) data.
 
-[Link to AAT webpage](https://aat.anu.edu.au/)
-[Link to 2dfdr webpage](https://aat.anu.edu.au/science/software/2dfdr)
 [2dfdr repository](https://dev.aao.org.au/rds/2dfdr)
 
 ## Main scope of py2dfdr
@@ -14,12 +12,15 @@ Contact: (Pablo Corcho-Caballero) corchocaballeropablo@gmail.com / p.corcho.caba
 ## Create observing runs data directory
 Before starting the data reduction sequence, it is necessary to classify each file (e.g. dark, fflat, arcs, science) within every input observing night. This is done in py2dfdr by defining *observing_runs*, i.e., collections of nights that share a set of calibration files (namely, darks, bias and detector flats). 
 
-The *archive.ArchiveObs* module provides a tool for classifying multiple observing nights into observing runs. The *input directory* must contain a set of nigth directories, using the naming convention: YYYYMMDD:
+The *archive.ArchiveObs* module provides a tool for classifying multiple observing nights into observing runs. The *input directory* must contain a set of nigth directories, using the naming convention: YYYYMMDD
+
+"""
     |MySetOfNights
         |20220101
             ...FITS files...
         |20220102
             ...
+"""
 
 All consecutive nights will be grouped into observing runs that extend up to two weeks of observations. The data withing each observing run will be organized according to the following scheme:
 
