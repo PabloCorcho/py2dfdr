@@ -141,6 +141,11 @@ class ReduceObsRun(object):
             raise NameError('[OBSRUN] ERROR: CCDs not provided [ccd_1, ccd_2]')
         else:
             logging.info('CCDs data to reduce: {}'.format(', '.join(self.ccds)))
+        # Skip nights
+        if "skip_nights" in kwargs.keys():
+            logging.info("Skipping the following observing nights")
+            self.remove_nights(kwargs["skip_nights"])
+
         # Parameter files for 2dfdr
         logging.info('[OBSRUN] Setting configuration files for 2dfdr')
         self.dark_idx_file = kwargs.get('dark_idx', None)
@@ -232,6 +237,13 @@ class ReduceObsRun(object):
         else:
             return False
 
+    def select_nights(nights):
+        """Set the nights to be reduced"""
+        self.nights = nights
+    def remove_nights(nights):
+        for night in nights:
+            logging.info(f"Skipping {night}")
+            self.nights.remove(night)
     # REDUCTION METHODS ------------------------------------------------------------------------------------------------
     def reduce_bias(self):
         """blah."""
