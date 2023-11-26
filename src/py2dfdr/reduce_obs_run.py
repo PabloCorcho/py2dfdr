@@ -798,8 +798,7 @@ class ReduceObsRun(object):
                         if command_success == 0:
                             object_flags[name]['FLAG'] = 'OK'
                             QC.check_image(path_to_obj.replace('.fits', 'red.fits'),
-                                           save_dir=os.path.join(os.path.dirname(path_to_obj),
-                                                                 '{}.png'.format(name)),
+                                           save_dir=path_to_obj.replace('.fits', '_qc.png'),
                                            title=obj_name)
                         else:
                             object_flags[name]['FLAG'] = 'AAORUNFAIL'
