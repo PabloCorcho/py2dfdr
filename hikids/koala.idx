@@ -1,0 +1,47 @@
+DRC_INSTRUMENT "AAOmega-Koala"
+
+DRC_TAB General "General Data Reduction Options"  TAB_General.idx
+
+DRC_TAB Extract "Extraction Parameters"           TAB_Extraction.idx
+  
+DRC_TAB Calib   "Wavelength and Flux Calibration" TAB_Calib.idx
+
+DRC_TAB Sky     "Sky Subtraction Parameters"      TAB_Sky.idx
+
+DRC_TAB Combine "Parameters Controlling Combination of Reduced Files"\
+                                                 TAB_CombineKoala.idx
+
+#DRC_TAB VelCor  "Velocity Corrections To Spectral Data" TAB_VelCor.idx
+
+DRC_TAB Plots   "Plot Parameters"                  TAB_Plots.idx
+
+
+# Constants (Have NO GUI widget thus not changeable by user)     
+DRC_CONST_PAR SHIFTTLM 0.0 REDUCE	;# pixel count to shift tramline map
+DRC_CONST_PAR ROTTLM 0.0 REDUCE		;# rotation angle for tramline map
+DRC_CONST_PAR SCLTLM 1.0 REDUCE	        ;# scale change for tramline map
+DRC_CONST_PAR BUTTONS 0 PLOT		;# true- put buttons on ??? plot
+DRC_CONST_PAR COLOUR G PLOT		;# colour used for line plots
+DRC_CONST_PAR OPERATION MEDIAN REDUCE	;# cal group operation ???
+DRC_CONST_PAR CHECKDEAD 0 REDUCE	;# no fibre check in 1DFIT bgrd sub
+DRC_CONST_PAR SIGPROF 0 REDUCE		;# Skip sigma profile extraction
+
+# R and D parameters.
+DRC_INCLUDE RnDTab.idx
+
+#DRC_LOGICAL_PAR USE_WSTA "Use Whale Shark Tank Alignment" TRUE \
+#    REDUCE "Use Whale Shark and Tank track alignment algorithms to derive shifts"
+
+# Overrides for KOALA 
+DRC_OVERRIDE_PAR SKYSCRUNCH     0     REDUCE 
+DRC_OVERRIDE_PAR EXTR_OPERATION OPTEX REDUCE
+DRC_OVERRIDE_PAR OPTEX_SLMODEL  POLYN REDUCE 
+DRC_OVERRIDE_PAR OPTEX_NSLPARS  1     REDUCE
+DRC_OVERRIDE_PAR SCATSUB        NONE  REDUCE
+DRC_OVERRIDE_PAR SKYSUB         0     REDUCE 
+DRC_OVERRIDE_PAR THRUPUT        0     REDUCE 
+DRC_OVERRIDE_PAR SCATSUB        KOALA REDUCE 
+
+
+
+
