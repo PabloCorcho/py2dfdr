@@ -449,6 +449,8 @@ class ReduceObsRun(object):
                 else:
                     with open(recommended_file, 'r') as f:
                         path_to_master = f.readline()
+                        while path_to_tram[0] == "#":
+                                path_to_tram = f.readline().strip()
                     if os.path.isfile(path_to_master):
                         logging.info('[OBSRUN] [{}] [{}] MASTERLFLAT found at\n  {}'
                                      .format(ccd, grating, path_to_master))
@@ -652,7 +654,9 @@ class ReduceObsRun(object):
                         verbose.NoFileError(recommended_file)
                     else:
                         with open(recommended_file, 'r') as f:
-                            path_to_arc = f.read().strip().split('\n')[0]
+                            path_to_arc = f.readline().strip()
+                            while path_to_tram[0] == "#":
+                                path_to_tram = f.readline().strip()
                         if os.path.isfile(path_to_arc):
                             logging.info(
                                 '[OBSRUN] [{}] [{}] [{}] ARC found at\n  {}'.format(
@@ -736,6 +740,8 @@ class ReduceObsRun(object):
                     else:
                         with open(recommended_file, 'r') as f:
                             path_to_tram = f.readline().strip()
+                            while path_to_tram[0] == "#":
+                                path_to_tram = f.readline().strip()
                         path_to_fflat = path_to_tram.replace(
                             'tlm.fits', 'red.fits')
                         if os.path.isfile(path_to_fflat):
