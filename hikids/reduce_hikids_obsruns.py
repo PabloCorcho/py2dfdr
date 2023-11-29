@@ -6,20 +6,21 @@ obsrunpath = '/Users/users/caballero/DATASERVER3/KOALA/obs_runs/obs_run_5/'
 redOR = red_obs.ReduceObsRun(
         obs_run_path=obsrunpath,
         ccds=[
-              #'ccd_1',
+               # 'ccd_1',
                'ccd_2'
               ],
-        skip_nights=["night_20180220"],
+        # skip_nights=["night_20180", "night_20180428"],
         dark_idx='koala_dark.idx',
         lflat_idx='koala_dark.idx',
         fibreflat_idx='koala_fflat.idx',
         arcs_idx='koala_arcs.idx',
         object_idx='koala_reduce.idx')
 
+redOR.select_nights(["night_20180220"])
 # redOR.reduce_darks(timeout=300)
 redOR.get_master_darks()
 
-# redOR.reduce_lflats(timeout=300)
+#redOR.reduce_lflats(timeout=300)
 redOR.get_master_lflats()
 
 # redOR.extract_tramlines(timeout=300)
