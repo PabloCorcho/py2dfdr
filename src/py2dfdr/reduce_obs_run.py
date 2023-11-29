@@ -541,6 +541,9 @@ class ReduceObsRun(object):
                     else:
                         with open(recommended_file, 'r') as f:
                             path_to_tram = f.readline().strip()
+                            while path_to_tram[0] == "#":
+                                path_to_tram = f.readline().strip()
+
                         if os.path.isfile(path_to_tram):
                             logging.info(
                                 '[OBSRUN] [{}] [{}] [{}] Selected Tramline\n  {}'.format(
