@@ -655,8 +655,8 @@ class ReduceObsRun(object):
                     else:
                         with open(recommended_file, 'r') as f:
                             path_to_arc = f.readline().strip()
-                            while path_to_tram[0] == "#":
-                                path_to_tram = f.readline().strip()
+                            while path_to_arc[0] == "#":
+                                path_to_arc = f.readline().strip()
                         if os.path.isfile(path_to_arc):
                             logging.info(
                                 '[OBSRUN] [{}] [{}] [{}] ARC found at\n  {}'.format(
