@@ -240,7 +240,10 @@ class ReduceObsRun(object):
     #TODO: IMPROVE DOC
     def select_nights(self, nights):
         """Set the nights to be reduced"""
+        logging.info("Updating manually OR night to be reduced")
+        logging.info("\n".join(nights))
         self.nights = nights
+
     def remove_nights(self, nights):
         for night in nights:
             logging.info(f"Skipping {night}")
