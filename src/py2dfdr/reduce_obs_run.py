@@ -598,10 +598,8 @@ class ReduceObsRun(object):
                         )
                         if command_success == 0:
                             QC.check_image(path_to_arc.replace('.fits', 'red.fits'),
-                                           save_dir=os.path.join(
-                                               os.path.dirname(path_to_arc),
-                                               '{}_arc_{}_{}.png'.format(
-                                                   name.split('/')[-1], arc_name, arc_exptime)))
+                                    title=os.path.basename(path_to_arc) + f"\narc: {arc_name}-{arc_exptime} sec",
+                                           save_dir=path_to_arc.replace('.fits', '_qc.png'))
                             names.append(name)
                             exptimes.append(arc_exptime)
                             arcnames.append(arc_name)
