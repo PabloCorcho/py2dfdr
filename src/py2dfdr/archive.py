@@ -82,9 +82,9 @@ class ArchiveObs(object):
             self.archive_print("Converting to Julian Dates")
             self.dates = np.zeros(len(nights_path))
             for i, night_dir in enumerate(nights_path):
-                folder = night_dir.split('/')[-1]
+                folder = os.path.basename(night_dir)
                 julian_date = Time(
-                    folder[:4] + '-' + folder[4:6] + '-'+folder[6:]).jd
+                        f"20{folder[:2]}-{folder[2:4]}-{folder[4:]}", format='fits').jd
                 self.dates[i] = julian_date
                 nights[folder] = {'JD': julian_date}
             self.nights = nights
