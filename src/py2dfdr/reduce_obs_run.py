@@ -449,8 +449,8 @@ class ReduceObsRun(object):
                 else:
                     with open(recommended_file, 'r') as f:
                         path_to_master = f.readline()
-                        while path_to_tram[0] == "#":
-                                path_to_tram = f.readline().strip()
+                        while path_to_master[0] == "#":
+                                path_to_master = f.readline().strip()
                     if os.path.isfile(path_to_master):
                         logging.info('[OBSRUN] [{}] [{}] MASTERLFLAT found at\n  {}'
                                      .format(ccd, grating, path_to_master))
