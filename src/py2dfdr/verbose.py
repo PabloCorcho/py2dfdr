@@ -26,7 +26,7 @@ def missing_master(file_name):
 # -------------------------------------------------------
 def log_header(file_name):
     """Make a pretty header line for a process."""
-    logging.info('-'*50 + '\n    {}    \n'.format(file_name)
+    logging.info('\n' + '-'*50 + '\n    {}    \n'.format(file_name)
                  + '-'*50)
 
 
