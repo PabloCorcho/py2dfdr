@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from astropy.io import fits
+from astropy.visualization import simple_norm
 from matplotlib import pyplot as plt
 import logging
 
@@ -20,6 +21,17 @@ def check_exists(path):
     """
     return os.path.exists(path)
 
+def check_exists_decorator(func):
+    """Check if file exists before calling function."""
+    def wrapper(*args, **kwargs):
+        if check_exists(args[0]):
+            return func(*args, **kwargs)
+        else:
+            logging.warning('[QC] WARNING: Input path {args[0]} does not exist')
+            return
+    return wrapper
+
+@check_exists_decorator
 def check_image(path, percentiles=None, save_dir=None, title=None):
     """blah."""
     logging.info('[QC] · QC plot for:\n   {}'.format(path))
@@ -28,7 +40,9 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
     master = fits.getdata(path)
     percents = np.nanpercentile(master.flatten(), percentiles)
     if not np.isfinite(percents).any():
-        logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS')
+        logging.warning('[QC] WARNING: ALL PIXELS HAVE NAN COUNTS, EXITING PLOT')
+        return
+
     fig = plt.figure(figsize=(10, 10))
     if title is not None:
         if title == 'auto':
@@ -73,18 +87,61 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
     plt.close()
 
 
-def check_saturated(path, sat_level=65500, log=True):
+@check_exists_decorator
+def check_saturated(path, sat_level=65500, log=True, plot=True):
     """Compute the fraction of saturated (nan/inf) pixels."""
 
-    file = fits.getdata(path)
-    finite_values = np.isfinite(file) & (file < sat_level)
+    data = fits.getdata(path)
+    finite_values = np.isfinite(data) & (data < sat_level)
     frac_sat = finite_values[~finite_values].size / finite_values.size
+    
+    pixel_value = np.sort(data[np.isfinite(data)].flatten())
+    cumulative_distrib = np.arange(1, pixel_value.size + 1, 1)
+    cumulative_fraction = cumulative_distrib / cumulative_distrib[-1]
+
     if log:
         logging.info('[QC] · Checking saturation levels for\n   {}'.format(path))
         logging.info('[QC] · Fraction of saturated pixels={:.3f}'.format(frac_sat))
+    if plot:
+        title = fits.getval(path, 'OBJECT')
+        fig = plt.figure(constrained_layout=True)
+        plt.suptitle(title)
+        gs = fig.add_gridspec(2, 5)
+        ax = fig.add_subplot(gs[:, :4])
+        norm = simple_norm(data, 'sqrt', max_cut=sat_level)
+        mappable = ax.imshow(data, origin='lower', norm=norm, cmap=flux_cmap,
+        interpolation='none')
+        plt.colorbar(mappable, aspect=40)
+        ax.set_xlabel('Column pixel')
+        ax.set_ylabel('Row pixel')
+
+        ax = fig.add_subplot(gs[0, -1])
+        ax.plot(pixel_value, cumulative_fraction)
+        ax.set_xlim(1, sat_level)
+        ax.set_yscale('log')
+        ax.set_xscale('log')
+        ax.set_xlabel('Pixel value')
+        ax.set_ylabel('Cum. fraction')
+        ax.grid(visible=True)
+
+        ax = fig.add_subplot(gs[1, -1])
+        ax.plot(pixel_value, cumulative_fraction)
+        p10_idx = np.searchsorted(cumulative_fraction, .1)
+        p90_idx = np.searchsorted(cumulative_fraction, .9)
+        ax.set_xlim(pixel_value[p10_idx], pixel_value[p90_idx])
+        ax.set_ylim(0.1, 0.9)
+        ax.set_xlabel('Pixel value')
+        ax.set_ylabel('Cum. fraction')
+        ax.grid(visible=True)
+
+        fig_path = path.replace(".fits", "_qc_sat.png")
+        fig.savefig(fig_path, bbox_inches='tight', dpi=200)
+
+
     return frac_sat
 
 
+@check_exists_decorator
 def get_keyword(path, keyword, hdu_index=0):
     """Return the keyword value of a fits file."""
     with fits.open(path) as f:
@@ -95,6 +152,7 @@ def get_keyword(path, keyword, hdu_index=0):
     return val
 
 
+@check_exists_decorator
 def check_tramline(path, plot=True):
     """blah."""
     logging.info('[QC] · Test for Tramline:\n   {}'.format(path))
@@ -149,6 +207,7 @@ def check_tramline(path, plot=True):
     return bad_tramline
 
 
+@check_exists_decorator
 def clean_nan(path):
     """blah..."""
     with fits.open(path, mode='update') as hdul:
