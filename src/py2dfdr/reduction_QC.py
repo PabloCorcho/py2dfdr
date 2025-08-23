@@ -2,8 +2,11 @@ import os
 import numpy as np
 from astropy.io import fits
 from astropy.visualization import simple_norm
+import matplotlib
 from matplotlib import pyplot as plt
 import logging
+
+matplotlib.use("agg")
 
 flux_cmap = plt.get_cmap('magma').copy()
 flux_cmap.set_under('fuchsia')
