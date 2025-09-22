@@ -132,7 +132,7 @@ class ReduceObsRun:
             logging.info("Skipping the following gratings (if present): %s", ', '.join(skip))
             self.remove_gratings(skip)
         
-        self.skip_exist = kwargs.get("skip_exist", False)
+        self.skip_reduced = kwargs.get("skip_reduced", False)
 
     # ----------------------------------------------------------------------------------
     # Logging / IO helpers
@@ -763,7 +763,7 @@ class ReduceObsRun:
                         if not QC.check_exists(path_to_obj):
                             logging.warning('File does not exist: %s', path_to_obj)
                             continue
-                        elif self.skip_exist:
+                        elif self.skip_reduced:
                             if self.is_reduced(path_to_obj):
                                 logging.warning('File is already reduced: SKIPPING')
                                 continue
