@@ -107,7 +107,7 @@ class ReduceObsRun:
         self.master_dark_exptime: float = float(kwargs.get('master_dark_exptime', 1800))
 
         # Master containers
-        self.obs_run_info: Optional[dict] = None
+        self.obs_run_info: Optional[dict] = {}
         self.nights: Optional[List[str]] = None
         self.master_bias: Optional[dict] = None
         self.master_darks: Optional[Dict[str, str]] = None
@@ -118,13 +118,19 @@ class ReduceObsRun:
 
         # Load OR descriptor
         self.load_obs_run_yml(**kwargs)
-
+        # Grating to process
+        self.gratings: Optional[List[str]] = kwargs.get("gratings",
+                                                        self.get_gratings())
         # Optionally skip nights
         skip = kwargs.get("skip_nights", kwargs.get("night_to_remove", [])) or []
         if skip:
             logging.info("Skipping the following nights (if present): %s", ', '.join(skip))
             self.remove_nights(skip)
-
+        # Optionally skip gratings
+        skip = kwargs.get("skip_gratings", kwargs.get("gratings_to_remove", [])) or []
+        if skip:
+            logging.info("Skipping the following gratings (if present): %s", ', '.join(skip))
+            self.remove_nights(skip)
     # ----------------------------------------------------------------------------------
     # Logging / IO helpers
     # ----------------------------------------------------------------------------------
@@ -241,6 +247,32 @@ class ReduceObsRun:
         if removed:
             for n in sorted(removed):
                 logging.info("Skipping night: %s", n)
+
+    def get_gratings(self):
+        """Retrieve all gratings included in the reduction list."""
+        logging.info("Retrieving all gratings")
+        if not self.nights:
+            return
+        gratings = []
+        for night in self.nights or []:
+            for ccd in self.ccds:
+                if ccd not in self.obs_run_info.get(night, {}):
+                    continue
+                for grating in self.obs_run_info[night][ccd].keys():
+                    if grating not in self.gratings:
+                        gratings.append(grating)
+        logging.info("List of selected gratings: " + ", ".join(gratings))
+        return gratings
+
+    def remove_gratings(self, gratings: List[str]) -> None:
+        if not self.gratings:
+            return
+        keep = set(self.gratings) - set(gratings)
+        removed = set(self.gratings) & set(gratings)
+        self.gratings = [g for g in self.gratings if g in keep]
+        if removed:
+            for g in sorted(removed):
+                logging.info("Skipping grating: %s", g)
 
     # ----------------------------------------------------------------------------------
     # Reduction steps
