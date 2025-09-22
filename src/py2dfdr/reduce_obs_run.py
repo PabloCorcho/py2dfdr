@@ -130,7 +130,7 @@ class ReduceObsRun:
         skip = kwargs.get("skip_gratings", kwargs.get("gratings_to_remove", [])) or []
         if skip:
             logging.info("Skipping the following gratings (if present): %s", ', '.join(skip))
-            self.remove_nights(skip)
+            self.remove_gratings(skip)
     # ----------------------------------------------------------------------------------
     # Logging / IO helpers
     # ----------------------------------------------------------------------------------
