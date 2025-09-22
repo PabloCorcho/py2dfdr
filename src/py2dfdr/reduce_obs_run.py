@@ -385,7 +385,7 @@ class ReduceObsRun:
         for ccd in self.ccds:
             if 'fflats' not in self.obs_run_info or ccd not in self.obs_run_info['fflats']:
                 continue
-            gratings = self.obs_run_info['fflats'][ccd].keys()
+            gratings = set(self.obs_run_info['fflats'][ccd]) & set(self.gratings)
             self.master_lflats[ccd] = {}
             for grating in gratings:
                 self.master_lflats[ccd][grating] = {}
@@ -461,7 +461,7 @@ class ReduceObsRun:
         for ccd in self.ccds:
             if 'fflats' not in self.obs_run_info or ccd not in self.obs_run_info['fflats']:
                 continue
-            gratings = self.obs_run_info['fflats'][ccd].keys()
+            gratings = set(self.obs_run_info['fflats'][ccd]) & set(self.gratings)
             self.master_lflats[ccd] = {}
             for grating in gratings:
                 rec_path = os.path.join(self.obs_run_path, 'fflats', ccd, grating, 'RECOMMENDED_FLAT')
@@ -488,7 +488,7 @@ class ReduceObsRun:
                 self.master_tlm[night][ccd] = {}
                 if ccd not in self.obs_run_info.get(night, {}):
                     continue
-                for grating in self.obs_run_info[night][ccd].keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     exptimes: List[float] = []
                     names: List[str] = []
                     for name, tram_file in self.obs_run_info[night][ccd][grating]['fibreflat'].items():
@@ -544,7 +544,7 @@ class ReduceObsRun:
             self.master_tlm[night] = {}
             for ccd in self.ccds:
                 self.master_tlm[night][ccd] = {}
-                for grating in self.obs_run_info.get(night, {}).get(ccd, {}).keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     rec_path = os.path.join(self.obs_run_path, night, ccd, grating, 'fibreflat', 'RECOMMENDED_TRAM')
                     if not os.path.isfile(rec_path):
                         verbose.NoFileError(rec_path)
@@ -570,7 +570,7 @@ class ReduceObsRun:
                 self.master_arcs[night][ccd] = {}
                 if ccd not in self.obs_run_info.get(night, {}):
                     continue
-                for grating in self.obs_run_info[night][ccd].keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     exptimes: List[float] = []
                     names: List[str] = []
                     arcnames: List[str] = []
@@ -646,7 +646,7 @@ class ReduceObsRun:
             self.master_arcs[night] = {}
             for ccd in self.ccds:
                 self.master_arcs[night][ccd] = {}
-                for grating in self.obs_run_info.get(night, {}).get(ccd, {}).keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     rec_path = os.path.join(self.obs_run_path, night, ccd, grating, 'arcs', 'RECOMMENDED_ARC')
                     if not os.path.isfile(rec_path):
                         verbose.NoFileError(rec_path)
@@ -679,7 +679,7 @@ class ReduceObsRun:
             for ccd in self.ccds:
                 if ccd not in self.obs_run_info.get(night, {}):
                     continue
-                for grating in self.obs_run_info[night][ccd].keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     for name, fflat in self.obs_run_info[night][ccd][grating]['fibreflat'].items():
                         path_to_fflat = os.path.join(self.obs_run_path, night, ccd, grating, 'fibreflat', fflat['PATH'])
                         exptime = fflat['EXPTIME']
@@ -719,7 +719,7 @@ class ReduceObsRun:
             self.master_fibreflats[night] = {}
             for ccd in self.ccds:
                 self.master_fibreflats[night][ccd] = {}
-                for grating in self.obs_run_info.get(night, {}).get(ccd, {}).keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     rec_tram = os.path.join(self.obs_run_path, night, ccd, grating, 'fibreflat', 'RECOMMENDED_TRAM')
                     if not os.path.isfile(rec_tram):
                         verbose.NoFileError(rec_tram)
@@ -747,7 +747,7 @@ class ReduceObsRun:
             for ccd in self.ccds:
                 if ccd not in self.obs_run_info.get(night, {}):
                     continue
-                for grating in self.obs_run_info[night][ccd].keys():
+                for grating in set(self.obs_run_info[night][ccd]) & set(self.gratings):
                     flags: Dict[str, dict] = {}
                     for name, obj in self.obs_run_info[night][ccd][grating]['sci'].items():
                         obj_name = obj['NAME']
