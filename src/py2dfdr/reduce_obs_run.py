@@ -259,7 +259,7 @@ class ReduceObsRun:
                 if ccd not in self.obs_run_info.get(night, {}):
                     continue
                 for grating in self.obs_run_info[night][ccd].keys():
-                    if grating not in self.gratings:
+                    if grating not in gratings:
                         gratings.append(grating)
         logging.info("List of selected gratings: " + ", ".join(gratings))
         return gratings
