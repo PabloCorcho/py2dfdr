@@ -755,7 +755,7 @@ class ReduceObsRun:
                         flags[name] = {'NAME': obj_name, 'PATH': obj['PATH']}
 
                         path_to_obj = os.path.join(self.obs_run_path, night, ccd, grating, 'sci', obj['PATH'])
-                        logging.info('[OBSRUN] [%s] [%s] [%s] OBJ %s (%.1f s): %s',
+                        logging.info('[OBSRUN] [%s] [%s] [%s] OBJ %s (%s s): %s',
                                      night, ccd, grating, obj_name, exptime, path_to_obj)
 
                         if not QC.check_exists(path_to_obj):
