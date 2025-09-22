@@ -131,6 +131,9 @@ class ReduceObsRun:
         if skip:
             logging.info("Skipping the following gratings (if present): %s", ', '.join(skip))
             self.remove_gratings(skip)
+        
+        self.skip_exist = kwargs.get("skip_exist", False)
+
     # ----------------------------------------------------------------------------------
     # Logging / IO helpers
     # ----------------------------------------------------------------------------------
@@ -500,7 +503,7 @@ class ReduceObsRun:
                             logging.warning('File does not exist: %s', path_to_fibreflat)
                             continue
                         if self.reject_saturated_image(path_to_fibreflat):
-                            logging.info('[OBSRUN] [%s] [%s] [%s] TRAM: SATURATED → skip.', night, ccd, grating)
+                            logging.info('[OBSRUN] [%s] [%s] [%s] TRAM: SATURATED -> skip.', night, ccd, grating)
                             continue
 
                         ok = aaorun_command('make_tlm', path_to_fibreflat,
@@ -586,7 +589,7 @@ class ReduceObsRun:
                             logging.warning('File does not exist: %s', path_to_arc)
                             continue
                         if self.reject_saturated_image(path_to_arc):
-                            logging.info('[OBSRUN] [%s] [%s] [%s] ARC SATURATED → skip.', night, ccd, grating)
+                            logging.info('[OBSRUN] [%s] [%s] [%s] ARC SATURATED -> skip.', night, ccd, grating)
                             continue
 
                         ok = aaorun_command(
@@ -666,7 +669,7 @@ class ReduceObsRun:
 
         self.check_masters(names=['darks', 'lflats', 'tlm', 'arcs'])
 
-        # Seed master_fibreflats structure based on master_tlm keys, replacing tlm→red
+        # Seed master_fibreflats structure based on master_tlm keys, replacing tlm->red
         self.master_fibreflats = {}
         for night, d_ccd in (self.master_tlm or {}).items():
             self.master_fibreflats[night] = {}
@@ -689,7 +692,7 @@ class ReduceObsRun:
                             logging.warning('File does not exist: %s', path_to_fflat)
                             continue
                         if self.reject_saturated_image(path_to_fflat):
-                            logging.info('[OBSRUN] [%s] [%s] [%s] FFLAT SATURATED → skip.', night, ccd, grating)
+                            logging.info('[OBSRUN] [%s] [%s] [%s] FFLAT SATURATED -> skip.', night, ccd, grating)
                             continue
 
                         ok = aaorun_command(
@@ -757,21 +760,24 @@ class ReduceObsRun:
                         path_to_obj = os.path.join(self.obs_run_path, night, ccd, grating, 'sci', obj['PATH'])
                         logging.info('[OBSRUN] [%s] [%s] [%s] OBJ %s (%s s): %s',
                                      night, ccd, grating, obj_name, exptime, path_to_obj)
-
                         if not QC.check_exists(path_to_obj):
                             logging.warning('File does not exist: %s', path_to_obj)
                             continue
+                        elif self.skip_exist:
+                            if self.is_reduced(path_to_obj):
+                                logging.warning('File is already reduced: SKIPPING')
+                                continue
                         if self.reject_from_name(obj_name):
                             flags[name]['FLAG'] = 'NAMEREJ'
-                            logging.info('[OBSRUN] Name-rejected → skip.')
+                            logging.info('[OBSRUN] Name-rejected -> skip.')
                             continue
                         if self.reject_binned(path_to_obj):
                             flags[name]['FLAG'] = 'BINNING_CONFIG'
-                            logging.info('[OBSRUN] Binning config → skip.')
+                            logging.info('[OBSRUN] Binning config -> skip.')
                             continue
                         if self.reject_saturated_image(path_to_obj):
                             flags[name]['FLAG'] = 'SATURATED'
-                            logging.info('[OBSRUN] Saturated → skip.')
+                            logging.info('[OBSRUN] Saturated -> skip.')
                             continue
 
                         ok = aaorun_command(
@@ -803,6 +809,12 @@ class ReduceObsRun:
                         logging.info('[OBSRUN] Wrote flags: %s', out_flags)
                     except Exception as e:
                         logging.warning('[OBSRUN] Failed writing flags file %s: %s', out_flags, e)
+
+    def is_reduced(self, path_to_obj):
+        if os.path.isfile(path_to_obj.replace(".fits", "red.fits")):
+            return True
+        else:
+            return False
 
     # ----------------------------------------------------------------------------------
     # Extra
