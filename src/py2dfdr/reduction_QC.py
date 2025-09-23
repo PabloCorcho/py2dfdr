@@ -56,32 +56,39 @@ def check_image(path, percentiles=None, save_dir=None, title=None):
     ####################################
     ax = fig.add_subplot(221)
     ax.set_title("Counts histogram")
-    ax.hist(master.flatten(), range=[percents[0], percents[-1]],
+    ax.hist(master.flatten(), range=[percents[0] * 0.9, percents[-1] * 1.1],
             bins=master.flatten().size//1000, log=True, color='k')
     ax.set_xlabel('counts')
     ax.set_ylabel('# pixels')
+    cmap = plt.get_cmap("Spectral")
     for pcnt, label in zip(percents, percentiles):
-        ax.axvline(pcnt, ls='-', label=label)
-    ax.legend(loc='center', bbox_to_anchor=(0.5, 1.2), ncol=3)
+        ax.axvline(pcnt, ls='-', label=label, color=cmap(label/100))
+    ax.legend(loc='center', bbox_to_anchor=(0.5, 1.2), ncol=3,
+              fontsize="xx-small")
     ####################################
     ax = fig.add_subplot(222)
     ax.set_title("2D reduced file")
-    mappable = ax.imshow(master, vmin=percents[0], vmax=percents[-1],
-                            cmap=flux_cmap, aspect='auto',
-                            origin='lower')
+    norm = simple_norm(master, stretch="sqrt",
+                       vmin=percents[0], vmax=percents[-1])
+    mappable = ax.imshow(master, norm=norm,
+                         cmap=flux_cmap, aspect='auto',
+                         origin='lower')
     plt.colorbar(mappable, label='counts', extend='both')
     ####################################
     central_fibre = master.shape[0] // 2
     ax = fig.add_subplot(223)
-    ax.set_title("Fiber {} spectra".format(central_fibre))
-    ax.plot(master[central_fibre], c='k')
-    ax.set_ylim(percents[0], percents[-1])
+    ax.plot(master[central_fibre], c='b', label=f"Fib {central_fibre}")
+    ax.plot(master[central_fibre - 100], c='g', label=f"Fib {central_fibre - 100}")
+    ax.plot(master[central_fibre + 100], c='r', label=f"Fib {central_fibre + 100}")
+    ax.legend()
+    ax.set_ylim(percents[0] * 0.8, percents[-1] * 1.2)
     ####################################
     central_column = master.shape[1] // 2
     ax = fig.add_subplot(224)
-    ax.set_title("Column {} spectra".format(central_column))
-    ax.plot(master[:, central_column], c='k')
-    ax.set_ylim(percents[0], percents[-1])
+    ax.plot(master[:, central_column], c='b', label=f"Col {central_column}")
+    ax.plot(master[:, central_column - 100], c='g', label=f"Col {central_column - 100}")
+    ax.plot(master[:, central_column + 100], c='r', label=f"Col {central_column + 100}")
+    ax.set_ylim(percents[0] * 0.8, percents[-1] * 1.2)
 
     if save_dir is not None:
         fig.savefig(save_dir, bbox_inches='tight')
